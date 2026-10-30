@@ -93,6 +93,12 @@
     "boss": "Boss",
     "combo": "{n}× Combo"
   },
+  "musicStyle": {
+    "standard": "Standard",
+    "synthwave": "Synthwave",
+    "disco": "90er Disco",
+    "edm": "EDM"
+  },
   "debug": {
     "download": "Debug-Datei herunterladen"
   },
@@ -130,6 +136,7 @@
     "audio": "Audio",
     "master": "Gesamtlautstärke",
     "music": "Musik",
+    "musicStyle": "Musikstil",
     "sfx": "Effekte",
     "mute": "Alles stumm",
     "graphics": "Grafik",

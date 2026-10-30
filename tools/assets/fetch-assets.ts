@@ -42,6 +42,54 @@ const OUT = path.resolve('apps/game/src/media');
 /** Assets from other sources, kept when this script rewrites the credits. */
 const AUDIO_CREDITS = [
   {
+    name: 'Synthwave House Loop',
+    authors: ['Fupi'],
+    usedFor: 'Synthwave music',
+    source: 'https://opengameart.org/node/124154',
+  },
+  {
+    name: 'Synth Wave',
+    authors: ['Pro Sensory'],
+    usedFor: 'Synthwave music',
+    source: 'https://opengameart.org/content/synth-wave',
+  },
+  {
+    name: 'Oldskool',
+    authors: ['Of Far Different Nature'],
+    usedFor: 'Synthwave music',
+    source: 'https://opengameart.org/content/oldskool',
+  },
+  {
+    name: 'Funky Disco Beats to Boogie/Woogie to',
+    authors: ['Fupi'],
+    usedFor: 'Disco music',
+    source: 'https://opengameart.org/content/funky-disco-beats-to-boogiewoogie-to',
+  },
+  {
+    name: 'Funked Up',
+    authors: ['Joth'],
+    usedFor: 'Disco music',
+    source: 'https://opengameart.org/content/funked-up',
+  },
+  {
+    name: 'Funky House',
+    authors: ['Of Far Different Nature'],
+    usedFor: 'Disco music',
+    source: 'https://opengameart.org/content/funky-house',
+  },
+  {
+    name: 'Free Rhythm Game Music Pack 1',
+    authors: ['tricksntraps'],
+    usedFor: 'EDM music',
+    source: 'https://opengameart.org/content/free-rhythm-game-music-pack-1',
+  },
+  {
+    name: 'Bouncer',
+    authors: ['Of Far Different Nature'],
+    usedFor: 'EDM music',
+    source: 'https://opengameart.org/node/107501',
+  },
+  {
     name: 'Toon Shooter Game Kit',
     authors: ['Quaternius'],
     usedFor: 'soldiers, enemies and weapons',

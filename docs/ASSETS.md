@@ -44,6 +44,19 @@ Alle Dateien liegen konvertiert in `apps/game/src/media/audio/`. `tools/assets/c
 | Friendly Talk On a Robotic Battlefield | illin | Musik Orbit Station | https://opengameart.org/content/friendly-talk-on-a-robotic-battlefield-looped | CC0 |
 | Heavy battle music | Davieplier | Musik Boss | https://opengameart.org/content/heavy-battle-music | CC0 |
 
+### Musikstile (in den Einstellungen umschaltbar)
+
+| Asset | Urheber | Stil | Quelle | Lizenz |
+|-------|---------|------|--------|--------|
+| Synthwave House Loop | Fupi | Synthwave | https://opengameart.org/node/124154 | CC0 |
+| Synth Wave | Pro Sensory | Synthwave | https://opengameart.org/content/synth-wave | CC0 |
+| Oldskool | Of Far Different Nature | Synthwave | https://opengameart.org/content/oldskool | CC0 |
+| Funky Disco Beats to Boogie/Woogie to | Fupi | Disco | https://opengameart.org/content/funky-disco-beats-to-boogiewoogie-to | CC0 |
+| Funked Up | Joth | Disco | https://opengameart.org/content/funked-up | CC0 |
+| Funky House | Of Far Different Nature | Disco | https://opengameart.org/content/funky-house | CC0 |
+| Free Rhythm Game Music Pack 1 | tricksntraps | EDM | https://opengameart.org/content/free-rhythm-game-music-pack-1 | CC0 |
+| Bouncer | Of Far Different Nature | EDM | https://opengameart.org/node/107501 | CC0 |
+
 ## 3D-Figuren (CC0)
 
 `tools/assets/bake-characters.ts` erzeugt aus den GLB-Dateien die kompakten Dateien in `apps/game/src/media/models/`.

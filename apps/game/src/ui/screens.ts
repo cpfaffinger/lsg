@@ -7,6 +7,7 @@ import {
   type UpgradeId,
   type WeaponId,
 } from '@lsg/shared';
+import { MUSIC_STYLES } from '../audio/music-player.ts';
 import type { QualityLevel } from '../core/quality.ts';
 import type { Settings } from '../core/settings.ts';
 import { formatNumber, t } from '../i18n/i18n.ts';
@@ -439,6 +440,12 @@ export class Screens {
       h('h2', { text: t('settings.audio') }),
       slider(t('settings.master'), settings.masterVolume, (v) => handlers.change({ masterVolume: v })),
       slider(t('settings.music'), settings.musicVolume, (v) => handlers.change({ musicVolume: v })),
+      select(
+        t('settings.musicStyle'),
+        settings.musicStyle,
+        MUSIC_STYLES.map((value) => ({ value, label: t(`musicStyle.${value}`) })),
+        (v) => handlers.change({ musicStyle: v }),
+      ),
       slider(t('settings.sfx'), settings.sfxVolume, (v) => handlers.change({ sfxVolume: v })),
       toggle(t('settings.mute'), settings.muted, (v) => handlers.change({ muted: v })),
       h('h2', { text: t('settings.graphics') }),

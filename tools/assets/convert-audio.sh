@@ -59,3 +59,19 @@ music "$SRC/music/desert.wav" desert
 music "$SRC/music/city.wav" city
 music "$SRC/music/station.wav" station
 music "$SRC/music/boss.mp3" boss
+
+# Music styles the player can switch between. Long tracks are cut and faded so they loop softly.
+styled() {
+  ffmpeg -nostdin -loglevel error -y -i "$1" -vn -t 100 -af "afade=t=in:d=0.3,afade=t=out:st=97:d=3"     -ac 2 -ar 44100 -c:a aac -b:a 96k "$OUT/music/$2.m4a"
+}
+
+styled "$SRC/music/synthwave-1.wav" synthwave-1
+styled "$SRC/music/synthwave-2.mp3" synthwave-2
+styled "$SRC/music/synthwave-3.wav" synthwave-3
+styled "$SRC/music/disco-1.flac" disco-1
+styled "$SRC/music/disco-2.mp3" disco-2
+styled "$SRC/music/disco-3.wav" disco-3
+styled "$SRC/music/edm-1.wav" edm-1
+styled "$SRC/music/edm-2.wav" edm-2
+styled "$SRC/music/edm-3.wav" edm-3
+styled "$SRC/music/edm-4.wav" edm-4

@@ -172,6 +172,7 @@ export class Game {
   private applySettings(): void {
     const s = this.settings.get();
     this.audio.setVolumes(s.masterVolume, s.sfxVolume, s.musicVolume, s.muted);
+    this.audio.setMusicStyle(s.musicStyle);
     this.effects.reducedMotion = s.reducedMotion;
     if (this.world.gates.colorblind !== s.colorblind) {
       this.world.gates.colorblind = s.colorblind;

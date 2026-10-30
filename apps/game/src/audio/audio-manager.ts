@@ -1,5 +1,5 @@
 import type { WorldId } from '../sim/level.ts';
-import { MusicPlayer, type MusicMood } from './music-player.ts';
+import { MusicPlayer, type MusicMood, type MusicStyle } from './music-player.ts';
 import { loadSfx, type SfxBank, type SfxId } from './sfx-bank.ts';
 
 interface PlayOptions {
@@ -40,6 +40,7 @@ export class AudioManager {
   private readonly voices = new Map<SfxId, number>();
   private volumes = { master: 0.8, sfx: 0.8, music: 0.6, muted: false };
   private mood: MusicMood = 'menu';
+  private style: MusicStyle = 'standard';
 
   get ready(): boolean {
     return this.ctx !== null && this.buffers !== null;
@@ -74,6 +75,7 @@ export class AudioManager {
       this.buffers = bank;
     });
     this.music = new MusicPlayer(ctx, this.musicBus);
+    this.music.setStyle(this.style);
     this.music.setMood(this.mood, this.worldId);
   }
 
@@ -104,6 +106,11 @@ export class AudioManager {
   setWorld(world: WorldId): void {
     this.worldId = world;
     this.music?.setMood(this.mood, world);
+  }
+
+  setMusicStyle(style: MusicStyle): void {
+    this.style = style;
+    this.music?.setStyle(style);
   }
 
   setMood(mood: MusicMood): void {

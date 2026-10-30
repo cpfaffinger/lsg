@@ -1,10 +1,12 @@
 import type { Locale } from '@lsg/shared';
+import type { MusicStyle } from '../audio/music-player.ts';
 import type { QualityLevel } from './quality.ts';
 
 export interface Settings {
   masterVolume: number;
   sfxVolume: number;
   musicVolume: number;
+  musicStyle: MusicStyle;
   muted: boolean;
   /** 'auto' lets the runtime benchmark choose. */
   quality: QualityLevel | 'auto';
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   masterVolume: 0.8,
   sfxVolume: 0.8,
   musicVolume: 0.6,
+  musicStyle: 'standard',
   muted: false,
   quality: 'auto',
   locale: null,

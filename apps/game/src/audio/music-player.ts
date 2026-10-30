@@ -2,7 +2,24 @@ import { mediaUrl } from '../media.ts';
 import type { WorldId } from '../sim/level.ts';
 
 export type MusicMood = 'menu' | 'play' | 'boss' | 'result';
-export type MusicTrack = 'menu' | 'boss' | WorldId;
+export const MUSIC_STYLES = ['standard', 'synthwave', 'disco', 'edm'] as const;
+export type MusicStyle = (typeof MUSIC_STYLES)[number];
+type MusicSlot = 'menu' | 'boss' | WorldId;
+type MusicTrack = string;
+
+/** Which recording plays where, per style (files in src/media/audio/music). */
+const STYLE_TRACKS: Record<MusicStyle, Record<MusicSlot, MusicTrack>> = {
+  standard: { menu: 'menu', desert: 'desert', city: 'city', station: 'station', boss: 'boss' },
+  synthwave: {
+    menu: 'synthwave-2',
+    desert: 'synthwave-1',
+    city: 'synthwave-3',
+    station: 'synthwave-2',
+    boss: 'synthwave-3',
+  },
+  disco: { menu: 'disco-2', desert: 'disco-1', city: 'disco-3', station: 'disco-1', boss: 'disco-3' },
+  edm: { menu: 'edm-2', desert: 'edm-4', city: 'edm-1', station: 'edm-3', boss: 'edm-1' },
+};
 
 const CROSSFADE_SECONDS = 1.2;
 /** Volume of the running track on the result screen. */
@@ -24,6 +41,9 @@ export class MusicPlayer {
   private playing: Playing | null = null;
   private wanted: MusicTrack | null = null;
   private level = 1;
+  private style: MusicStyle = 'standard';
+  private mood: MusicMood = 'menu';
+  private world: WorldId = 'desert';
 
   constructor(ctx: AudioContext, output: GainNode) {
     this.ctx = ctx;
@@ -46,9 +66,19 @@ export class MusicPlayer {
   }
 
   setMood(mood: MusicMood, world: WorldId): void {
+    this.mood = mood;
+    this.world = world;
     this.setLevel(mood === 'result' ? RESULT_LEVEL : 1);
     if (mood === 'result') return;
-    this.setTrack(mood === 'menu' ? 'menu' : mood === 'boss' ? 'boss' : world);
+    const slot: MusicSlot = mood === 'menu' ? 'menu' : mood === 'boss' ? 'boss' : world;
+    this.setTrack(STYLE_TRACKS[this.style][slot]);
+  }
+
+  /** Switches the style right away, so the player hears the choice in the settings. */
+  setStyle(style: MusicStyle): void {
+    if (style === this.style) return;
+    this.style = style;
+    this.setMood(this.mood === 'result' ? 'menu' : this.mood, this.world);
   }
 
   private setLevel(level: number): void {
