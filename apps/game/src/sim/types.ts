@@ -97,6 +97,9 @@ export interface Obstacle {
   alive: boolean;
 }
 
+/** What killed squad units: an enemy by contact, an enemy projectile or an obstacle. */
+export type LossCause = EnemyKind | 'projectile' | 'barrier' | 'barrel';
+
 export type SimEvent =
   | { type: 'shot'; x: number; z: number; weapon: WeaponId }
   | { type: 'enemyHit'; id: number; x: number; z: number; damage: number; kind: EnemyKind }
@@ -120,7 +123,7 @@ export type SimEvent =
       after: number;
       x: number;
     }
-  | { type: 'unitsLost'; count: number; x: number; z: number }
+  | { type: 'unitsLost'; count: number; x: number; z: number; cause: LossCause }
   | { type: 'explosion'; x: number; z: number; radius: number }
   | { type: 'enemyShot'; x: number; z: number }
   | { type: 'obstacleHit'; id: number; x: number; z: number }

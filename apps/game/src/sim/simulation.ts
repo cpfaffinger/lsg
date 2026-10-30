@@ -16,6 +16,7 @@ import {
   type Enemy,
   type EnemyKind,
   type Gate,
+  type LossCause,
   type Obstacle,
   type ObstacleKind,
   type Projectile,
@@ -165,12 +166,12 @@ export class Simulation {
     this.squadX = clamp(this.squadX, -limit, limit);
   }
 
-  private loseUnits(count: number, x: number, z: number): void {
+  private loseUnits(count: number, x: number, z: number, cause: LossCause): void {
     const lost = Math.min(this.units, Math.max(0, Math.round(count)));
     if (lost <= 0) return;
     this.units -= lost;
     this.stats.unitsLost += lost;
-    this.emit({ type: 'unitsLost', count: lost, x, z });
+    this.emit({ type: 'unitsLost', count: lost, x, z, cause });
   }
 
   private squadContains(x: number, radius: number): boolean {
@@ -256,7 +257,9 @@ export class Simulation {
       const angle = Math.atan2(enemy.x - ox, dz);
       if (Math.abs(angle) > AIM_CONE) continue;
       // Prefer targets that need little turning and are close.
-      const score = Math.abs(angle) * 6 + dz * 0.08;
+      // Ranged enemies are dangerous, so units prioritise them over closer melee enemies.
+      const ranged = enemy.holdZ !== null && enemy.kind !== 'boss' && enemy.kind !== 'miniboss';
+      const score = Math.abs(angle) * 6 + dz * 0.08 - (ranged ? 2.5 : 0);
       if (score < bestScore) {
         bestScore = score;
         best = enemy;
@@ -481,9 +484,14 @@ export class Simulation {
       if (crossedFront && this.squadContains(obstacle.x, obstacle.width / 2)) {
         if (obstacle.kind === 'barrel') {
           this.explodeBarrel(obstacle);
-          this.loseUnits(Math.max(1, this.units * 0.25), obstacle.x, obstacle.z);
+          this.loseUnits(Math.max(1, this.units * 0.25), obstacle.x, obstacle.z, 'barrel');
         } else {
-          this.loseUnits(this.units * this.barrierOverlapFraction(obstacle), obstacle.x, obstacle.z);
+          this.loseUnits(
+            this.units * this.barrierOverlapFraction(obstacle),
+            obstacle.x,
+            obstacle.z,
+            'barrier',
+          );
         }
       }
       if (obstacle.z > DESPAWN_Z) obstacle.alive = false;
@@ -546,7 +554,7 @@ export class Simulation {
         enemy.z - enemy.radius <= back &&
         this.squadContains(enemy.x, enemy.radius)
       ) {
-        this.loseUnits(enemy.crush, enemy.x, enemy.z);
+        this.loseUnits(enemy.crush, enemy.x, enemy.z, enemy.kind);
         this.killEnemy(enemy, true);
         continue;
       }
@@ -721,7 +729,7 @@ export class Simulation {
       if (p.owner === 'enemy') {
         if (p.z >= SQUAD_FRONT_Z && p.z <= back && this.squadContains(p.x, 0.15)) {
           p.alive = false;
-          this.loseUnits(p.damage, p.x, p.z);
+          this.loseUnits(p.damage, p.x, p.z, 'projectile');
         } else if (p.z > DESPAWN_Z) {
           p.alive = false;
         }

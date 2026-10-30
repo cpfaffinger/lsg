@@ -30,9 +30,12 @@ export function playLevel(
   level: LevelDef,
   modifiers: RunModifiers = DEFAULT_MODIFIERS,
   skill: BotSkill = 'good',
+  /** Distance at which the bot commits to a gate; varies reaction time between bot variants. */
+  goodLookahead = 18,
 ) {
   const sim = new Simulation(level, modifiers);
   const timeline: { t: number; distance: number; units: number }[] = [];
+  const losses: Record<string, number> = {};
   const decided = new Map<number, number>();
   let rngState = level.seed;
   const random = () => {
@@ -41,7 +44,7 @@ export function playLevel(
   };
   let lastSample = -1;
   for (let t = 0; t < 600 && sim.status === 'running'; t += DT) {
-    const lookahead = skill === 'good' ? 18 : 45;
+    const lookahead = skill === 'good' ? goodLookahead : 45;
     const upcoming = sim.gates.filter((g) => g.alive && g.z < 0 && g.z > -lookahead);
     let targetX = 0;
     if (upcoming.length > 0) {
@@ -62,8 +65,25 @@ export function playLevel(
         targetX = avg > 0 ? -2 : 2;
       }
     }
+    // Any player sidesteps walls: move to the free part of the lane when a barrier is close.
+    const barrier = sim.obstacles.find((o) => o.alive && o.kind === 'barrier' && o.z > -14 && o.z < 1);
+    if (barrier && skill !== 'poor') {
+      const clearance = barrier.width / 2 + sim.halfWidth + 0.4;
+      const left = barrier.x - clearance;
+      const right = barrier.x + clearance;
+      const limit = 5 - sim.halfWidth;
+      const options = [left, right].filter((x) => Math.abs(x) <= limit);
+      if (Math.abs(targetX - barrier.x) < clearance) {
+        targetX =
+          options.length > 0
+            ? options.reduce((a, b) => (Math.abs(b - targetX) < Math.abs(a - targetX) ? b : a))
+            : targetX;
+      }
+    }
     sim.step(DT, { dragWorld: targetX - sim.squadX, axis: 0 });
-    sim.drainEvents();
+    for (const event of sim.drainEvents()) {
+      if (event.type === 'unitsLost') losses[event.cause] = (losses[event.cause] ?? 0) + event.count;
+    }
     const second = Math.floor(t);
     if (second !== lastSample && second % 5 === 0) {
       lastSample = second;
@@ -76,6 +96,7 @@ export function playLevel(
     stats: { ...sim.stats },
     distance: Math.round(sim.distance),
     timeline,
+    losses,
   };
 }
 
