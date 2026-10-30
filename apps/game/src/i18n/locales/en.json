@@ -6,16 +6,69 @@
     "controlsHint": "Drag or use A / D to steer · your squad shoots automatically"
   },
   "menu": {
-    "playLevel": "Play level {n}"
+    "playLevel": "Play level {n}",
+    "replayFinal": "Replay level {n}",
+    "levels": "Levels",
+    "shop": "Shop",
+    "endless": "Endless",
+    "settings": "Settings",
+    "back": "Back",
+    "stars": "{count} stars",
+    "endlessBest": "Best: {distance} m",
+    "campaignComplete": "Campaign complete! Try endless mode or collect all stars."
+  },
+  "worlds": {
+    "desert": "Dust Valley",
+    "city": "Neon City",
+    "station": "Orbit Station"
+  },
+  "levels": {
+    "title": "Levels",
+    "locked": "Locked",
+    "boss": "Boss",
+    "miniboss": "Mini-boss",
+    "level": "Level {n}"
+  },
+  "shop": {
+    "title": "Shop",
+    "upgrades": "Upgrades",
+    "skins": "Skins",
+    "maxed": "Max",
+    "buy": "Buy",
+    "owned": "Owned",
+    "select": "Select",
+    "selected": "Selected",
+    "level": "Lv {level}/{max}",
+    "unlockStars": "{count} stars",
+    "coinsOnly": "Coins are earned in-game only. No real money, ever."
+  },
+  "upgrade": {
+    "squad": { "name": "Recruits", "effect": "+{value} starting soldier" },
+    "damage": { "name": "Firepower", "effect": "+{value}% damage" },
+    "fireRate": { "name": "Trigger speed", "effect": "+{value}% fire rate" },
+    "coins": { "name": "Coin magnet", "effect": "+{value}% coins" },
+    "speed": { "name": "Agility", "effect": "+{value}% steering speed" }
+  },
+  "skin": {
+    "classic": "Classic",
+    "jungle": "Jungle",
+    "crimson": "Crimson",
+    "arctic": "Arctic",
+    "neon": "Neon",
+    "gold": "Gold",
+    "shadow": "Shadow"
   },
   "hud": {
     "level": "Level {n}",
+    "endless": "Endless",
+    "distance": "{distance} m",
     "pause": "Pause",
     "boss": "Boss"
   },
   "pause": {
     "title": "Paused",
     "resume": "Resume",
+    "restart": "Restart",
     "quit": "Quit to menu"
   },
   "result": {
@@ -23,13 +76,48 @@
     "wonSubtitle": "Your squad made it through.",
     "lostTitle": "Squad lost",
     "lostSubtitle": "Shoot the gates to make them stronger before you pass.",
+    "endlessTitle": "Run over",
+    "endlessSubtitle": "You made it {distance} m.",
+    "newBest": "New best!",
     "kills": "Enemies defeated",
     "peakSquad": "Largest squad",
+    "finalSquad": "Squad at the end",
     "coins": "Coins earned",
+    "coinsKills": "Defeated enemies",
+    "coinsCompletion": "Level bonus",
+    "coinsStars": "Star bonus",
+    "total": "Total",
     "retry": "Try again",
     "playAgain": "Play again",
     "next": "Next level",
-    "menu": "Menu"
+    "menu": "Menu",
+    "upgradeHint": "Tip: upgrades in the shop make every run stronger."
+  },
+  "settings": {
+    "title": "Settings",
+    "audio": "Audio",
+    "master": "Master volume",
+    "music": "Music",
+    "sfx": "Effects",
+    "mute": "Mute all",
+    "graphics": "Graphics",
+    "quality": "Quality",
+    "qualityAuto": "Automatic",
+    "language": "Language",
+    "accessibility": "Accessibility",
+    "reducedMotion": "Reduce motion (no screen shake)",
+    "colorblind": "Colour-blind friendly gates",
+    "haptics": "Vibration",
+    "showFps": "Show FPS",
+    "data": "Data",
+    "resetProgress": "Reset local progress",
+    "resetConfirm": "Delete all local progress on this device? This cannot be undone.",
+    "credits": "Credits",
+    "privacy": "Privacy"
+  },
+  "language": {
+    "en": "English",
+    "de": "Deutsch"
   },
   "gate": {
     "damage": "DAMAGE",
@@ -41,6 +129,20 @@
     "spread": "SPREAD",
     "laser": "LASER",
     "rocket": "ROCKETS"
+  },
+  "unlock": {
+    "title": "New!",
+    "factor": "Multiplier gates: shoot them to raise the multiplier.",
+    "tank": "Tanks: tough enemies that crush several soldiers.",
+    "percent": "Damage and fire-rate gates boost every soldier.",
+    "barrel": "Explosive barrels: shoot them near enemies.",
+    "shooter": "Shooters stop and fire at you. Take them out first.",
+    "spread": "Spread gun: three pellets per shot.",
+    "splitter": "Splitters burst into smaller enemies.",
+    "barrier": "Walls! Steer around them or lose soldiers.",
+    "shield": "Shield bearers block straight shots. Hit them from the side or use spread and rockets.",
+    "laser": "Laser: pierces through several enemies.",
+    "rocket": "Rockets: slow but explosive."
   },
   "debug": {
     "fps": "{fps} FPS",

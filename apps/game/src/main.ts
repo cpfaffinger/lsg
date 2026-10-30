@@ -1,4 +1,5 @@
 import './styles.css';
+import './styles/menus.css';
 import { Game } from './game.ts';
 import { initLocale } from './i18n/i18n.ts';
 
@@ -8,6 +9,7 @@ async function boot(): Promise<void> {
   const ui = document.querySelector<HTMLDivElement>('#ui');
   if (!canvas || !ui) throw new Error('Missing #scene or #ui element');
   const game = new Game(canvas, ui);
+  await game.init();
   game.start();
   if (import.meta.env.DEV) {
     const { STRESS_LEVEL } = await import('./data/levels/stress.ts');

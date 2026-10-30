@@ -48,14 +48,19 @@ export class SquadView {
     this.mesh.castShadow = true;
     this.mesh.frustumCulled = false;
     this.mesh.count = 0;
-    const tint = new Color();
-    for (let i = 0; i < CAP; i++) {
-      // Slight per-unit variation reads as a crowd rather than clones.
-      tint.setHex(PALETTE.squad).offsetHSL(0, 0, ((i * 37) % 11) / 110 - 0.05);
-      this.mesh.setColorAt(i, tint);
-    }
+    this.setColor(PALETTE.squad);
     scene.add(this.mesh);
     this.dummy.matrixAutoUpdate = false;
+  }
+
+  /** Recolours the squad (skins). Slight per-unit variation reads as a crowd rather than clones. */
+  setColor(hex: number): void {
+    const tint = new Color();
+    for (let i = 0; i < CAP; i++) {
+      tint.setHex(hex).offsetHSL(0, 0, ((i * 37) % 11) / 110 - 0.05);
+      this.mesh.setColorAt(i, tint);
+    }
+    if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }
 
   /** World-space x of the squad centre for the current render frame. */

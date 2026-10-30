@@ -82,8 +82,14 @@ export class Hud {
     element.hidden = hidden;
   }
 
-  update(sim: Simulation, renderer: SceneRenderer, squadX: number): void {
-    this.setText(LABEL_POOL, this.levelLabel, t('hud.level', { n: sim.level.number }));
+  update(sim: Simulation, renderer: SceneRenderer, squadX: number, endless = false): void {
+    this.setText(
+      LABEL_POOL,
+      this.levelLabel,
+      endless
+        ? t('hud.distance', { distance: Math.round(sim.distance) })
+        : t('hud.level', { n: sim.level.number }),
+    );
     const progress = `scaleX(${sim.progress.toFixed(3)})`;
     if (progress !== this.lastProgress) {
       this.lastProgress = progress;

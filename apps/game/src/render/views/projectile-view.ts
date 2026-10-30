@@ -40,6 +40,10 @@ export class ProjectileView {
     scene.add(this.bullets, this.orbs);
   }
 
+  setColor(hex: number): void {
+    (this.bullets.material as MeshBasicMaterial).color.setHex(hex);
+  }
+
   update(sim: Simulation, alpha: number): void {
     let bullets = 0;
     let orbs = 0;
