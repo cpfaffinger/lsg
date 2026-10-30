@@ -162,6 +162,10 @@ export class Game {
     const s = this.settings.get();
     this.audio.setVolumes(s.masterVolume, s.sfxVolume, s.musicVolume, s.muted);
     this.effects.reducedMotion = s.reducedMotion;
+    if (this.world.gates.colorblind !== s.colorblind) {
+      this.world.gates.colorblind = s.colorblind;
+      this.world.gates.labelRevision++;
+    }
     this.debug.visible = s.showFps || new URLSearchParams(location.search).has('debug');
     const quality = this.resolveQuality();
     if (quality.level !== this.renderer.currentQuality.level) {

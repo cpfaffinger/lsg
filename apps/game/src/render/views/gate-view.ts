@@ -87,6 +87,8 @@ export class GateView {
   private time = 0;
   /** Bumped when the language changes so labels re-render. */
   labelRevision = 0;
+  /** Adds ▲/▼ symbols so good and bad gates differ by more than colour. */
+  colorblind = false;
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -154,12 +156,15 @@ export class GateView {
   }
 
   private drawLabel(visual: GateVisual, gate: Gate): void {
-    const key = `${gate.op}:${gate.value}:${gate.weapon}:${this.labelRevision}`;
+    const good = gate.op === 'weapon' || isGateBeneficial(gate.op, gate.value);
+    const key = `${gate.op}:${gate.value}:${gate.weapon}:${this.labelRevision}:${this.colorblind}:${good}`;
     if (key === visual.renderedKey) return;
     visual.renderedKey = key;
     const ctx = visual.canvas.getContext('2d');
     if (!ctx) return;
-    const { main, sub } = formatGateLabel(gate.op, gate.value, gate.weapon);
+    const label = formatGateLabel(gate.op, gate.value, gate.weapon);
+    const main = this.colorblind && gate.op !== 'weapon' ? `${good ? '▲' : '▼'}${label.main}` : label.main;
+    const sub = label.sub;
     ctx.clearRect(0, 0, visual.canvas.width, visual.canvas.height);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

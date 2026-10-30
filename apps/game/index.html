@@ -8,13 +8,84 @@
     />
     <meta name="theme-color" content="#0b1020" />
     <meta name="description" content="LSG - an ad-free 3D lane shooter that runs in your browser." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>LSG</title>
+    <style>
+      /* Inline so the loading screen paints before any script or stylesheet arrives. */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0b1020;
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        color: #cfe0ff;
+        font:
+          800 16px system-ui,
+          sans-serif;
+        letter-spacing: 0.2em;
+        transition: opacity 0.4s ease;
+        z-index: 100;
+      }
+      #boot .logo {
+        font-size: 72px;
+        letter-spacing: 0.08em;
+        background: linear-gradient(180deg, #ffffff, #8fd0ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      #boot .bar {
+        width: 160px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgb(255 255 255 / 12%);
+        overflow: hidden;
+      }
+      #boot .bar::after {
+        content: '';
+        display: block;
+        width: 40%;
+        height: 100%;
+        background: #3fa9ff;
+        animation: boot-slide 1s ease-in-out infinite;
+      }
+      @keyframes boot-slide {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(250%);
+        }
+      }
+      #boot.done {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
   </head>
   <body>
+    <div id="boot" aria-live="polite">
+      <div class="logo">LSG</div>
+      <div class="bar"></div>
+    </div>
     <div id="app">
       <canvas id="scene" aria-label="Game view"></canvas>
       <div id="ui" class="ui-root"></div>
     </div>
+    <noscript>LSG needs JavaScript and WebGL to run.</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

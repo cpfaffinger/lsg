@@ -651,6 +651,31 @@
   opacity: 0;
 }
 
+.update-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+.settings-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fatal-error {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  color: #e8edf8;
+  font:
+    700 18px system-ui,
+    sans-serif;
+  text-align: center;
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;

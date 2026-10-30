@@ -1,1 +1,223 @@
-{}
+{
+  "app": {
+    "title": "LSG",
+    "tagline": "Lane Shooting Game",
+    "loading": "Lädt…",
+    "controlsHint": "Ziehen oder A / D zum Steuern · deine Truppe schießt automatisch",
+    "updateAvailable": "Eine neue Version von LSG ist verfügbar.",
+    "update": "Aktualisieren",
+    "offlineReady": "LSG ist jetzt offline spielbar.",
+    "install": "Als App installieren"
+  },
+  "menu": {
+    "playLevel": "Level {n} spielen",
+    "replayFinal": "Level {n} erneut spielen",
+    "levels": "Level",
+    "shop": "Shop",
+    "endless": "Endlos",
+    "settings": "Einstellungen",
+    "back": "Zurück",
+    "stars": "{count} Sterne",
+    "endlessBest": "Rekord: {distance} m",
+    "campaignComplete": "Kampagne geschafft! Probier den Endlos-Modus oder sammle alle Sterne.",
+    "announcement": "Mitteilung"
+  },
+  "worlds": {
+    "desert": "Staubtal",
+    "city": "Neon City",
+    "station": "Orbitalstation"
+  },
+  "levels": {
+    "title": "Level",
+    "locked": "Gesperrt",
+    "boss": "Boss",
+    "miniboss": "Mini-Boss",
+    "level": "Level {n}"
+  },
+  "shop": {
+    "title": "Shop",
+    "upgrades": "Upgrades",
+    "skins": "Skins",
+    "maxed": "Max",
+    "buy": "Kaufen",
+    "owned": "Besitzt du",
+    "select": "Auswählen",
+    "selected": "Ausgewählt",
+    "level": "Stufe {level}/{max}",
+    "unlockStars": "{count} Sterne",
+    "coinsOnly": "Münzen gibt es nur im Spiel. Niemals für echtes Geld."
+  },
+  "upgrade": {
+    "squad": {
+      "name": "Rekruten",
+      "effect": "+{value} Soldat zum Start"
+    },
+    "damage": {
+      "name": "Feuerkraft",
+      "effect": "+{value} % Schaden"
+    },
+    "fireRate": {
+      "name": "Abzugstempo",
+      "effect": "+{value} % Feuerrate"
+    },
+    "coins": {
+      "name": "Münzmagnet",
+      "effect": "+{value} % Münzen"
+    },
+    "speed": {
+      "name": "Wendigkeit",
+      "effect": "+{value} % Lenkgeschwindigkeit"
+    }
+  },
+  "skin": {
+    "classic": "Klassisch",
+    "jungle": "Dschungel",
+    "crimson": "Purpur",
+    "arctic": "Arktis",
+    "neon": "Neon",
+    "gold": "Gold",
+    "shadow": "Schatten"
+  },
+  "hud": {
+    "level": "Level {n}",
+    "endless": "Endlos",
+    "distance": "{distance} m",
+    "pause": "Pause",
+    "boss": "Boss"
+  },
+  "pause": {
+    "title": "Pause",
+    "resume": "Weiter",
+    "restart": "Neu starten",
+    "quit": "Zum Menü"
+  },
+  "result": {
+    "wonTitle": "Level geschafft!",
+    "wonSubtitle": "Deine Truppe ist durchgekommen.",
+    "lostTitle": "Truppe verloren",
+    "lostSubtitle": "Schieß auf die Tore, damit sie stärker werden, bevor du durchläufst.",
+    "endlessTitle": "Lauf beendet",
+    "endlessSubtitle": "Du hast {distance} m geschafft.",
+    "newBest": "Neuer Rekord!",
+    "kills": "Besiegte Gegner",
+    "peakSquad": "Größte Truppe",
+    "finalSquad": "Truppe am Ende",
+    "coins": "Verdiente Münzen",
+    "coinsKills": "Besiegte Gegner",
+    "coinsCompletion": "Level-Bonus",
+    "coinsStars": "Sterne-Bonus",
+    "total": "Gesamt",
+    "retry": "Nochmal versuchen",
+    "playAgain": "Nochmal spielen",
+    "next": "Nächstes Level",
+    "menu": "Menü",
+    "upgradeHint": "Tipp: Upgrades im Shop machen jeden Lauf stärker."
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "audio": "Audio",
+    "master": "Gesamtlautstärke",
+    "music": "Musik",
+    "sfx": "Effekte",
+    "mute": "Alles stumm",
+    "graphics": "Grafik",
+    "quality": "Qualität",
+    "qualityAuto": "Automatisch",
+    "language": "Sprache",
+    "accessibility": "Barrierefreiheit",
+    "reducedMotion": "Weniger Bewegung (kein Bildschirmwackeln)",
+    "colorblind": "Tore farbenblind-freundlich",
+    "haptics": "Vibration",
+    "showFps": "FPS anzeigen",
+    "data": "Daten",
+    "resetProgress": "Lokalen Fortschritt zurücksetzen",
+    "resetConfirm": "Allen lokalen Fortschritt auf diesem Gerät löschen? Das kann nicht rückgängig gemacht werden.",
+    "credits": "Mitwirkende",
+    "privacy": "Datenschutz",
+    "fullscreen": "Vollbild",
+    "app": "App"
+  },
+  "language": {
+    "en": "English",
+    "de": "Deutsch"
+  },
+  "gate": {
+    "damage": "SCHADEN",
+    "fireRate": "FEUERRATE",
+    "weapon": "WAFFE"
+  },
+  "weapon": {
+    "rifle": "GEWEHR",
+    "spread": "STREUUNG",
+    "laser": "LASER",
+    "rocket": "RAKETEN"
+  },
+  "unlock": {
+    "title": "Neu!",
+    "factor": "Multiplikator-Tore: Schieß auf sie, um den Faktor zu erhöhen.",
+    "tank": "Panzer: zähe Gegner, die mehrere Soldaten überrollen.",
+    "percent": "Schadens- und Feuerraten-Tore verstärken jeden Soldaten.",
+    "barrel": "Explosive Fässer: Schieß auf sie, wenn Gegner in der Nähe sind.",
+    "shooter": "Schützen bleiben stehen und feuern auf dich. Schalte sie zuerst aus.",
+    "spread": "Streuwaffe: drei Kugeln pro Schuss.",
+    "splitter": "Spalter zerfallen in kleinere Gegner.",
+    "barrier": "Mauern! Weich ihnen aus oder du verlierst Soldaten.",
+    "shield": "Schildträger blocken gerade Schüsse. Triff sie von der Seite oder nutze Streuwaffe und Raketen.",
+    "laser": "Laser: durchschlägt mehrere Gegner.",
+    "rocket": "Raketen: langsam, aber explosiv.",
+    "continue": "Los geht's!"
+  },
+  "debug": {
+    "fps": "{fps} FPS",
+    "quality": "Qualität: {level}"
+  },
+  "quality": {
+    "low": "Niedrig",
+    "medium": "Mittel",
+    "high": "Hoch",
+    "ultra": "Ultra"
+  },
+  "account": {
+    "title": "Konto",
+    "signIn": "Anmelden",
+    "signInGoogle": "Mit Google anmelden",
+    "signedOutText": "Melde dich mit Google an, um deinen Fortschritt in der Cloud zu speichern und auf jedem Gerät weiterzuspielen. Ohne Konto kannst du jederzeit als Gast spielen.",
+    "guestNote": "Dein bisheriger Gast-Fortschritt wird beim ersten Anmelden auf diesem Gerät in dein Konto übernommen.",
+    "unavailable": "Die Anmeldung ist gerade nicht verfügbar. Dein Fortschritt wird auf diesem Gerät gespeichert.",
+    "maintenance": "Das Spiel wird gerade gewartet. Die Anmeldung ist vorübergehend deaktiviert.",
+    "signedInAs": "Angemeldet als",
+    "syncStatus": "Cloud-Speicher",
+    "status": {
+      "offline": "Nicht verbunden",
+      "idle": "Bereit",
+      "syncing": "Synchronisiere…",
+      "synced": "Aktuell",
+      "error": "Synchronisierung fehlgeschlagen — neuer Versuch folgt"
+    },
+    "lastSync": "Zuletzt synchronisiert: {time}",
+    "syncNow": "Jetzt synchronisieren",
+    "export": "Meine Daten exportieren",
+    "signOut": "Abmelden",
+    "delete": "Konto löschen",
+    "deleteConfirm": "Dein Konto und alle Cloud-Daten löschen? Dein Fortschritt bleibt auf diesem Gerät erhalten. Das kann nicht rückgängig gemacht werden.",
+    "deleted": "Dein Konto wurde gelöscht.",
+    "signOutNote": "Nach dem Abmelden bleibt dein Fortschritt als Gast auf diesem Gerät.",
+    "loginResult": {
+      "ok": "Angemeldet. Dein Fortschritt wird jetzt in der Cloud gespeichert.",
+      "cancelled": "Die Anmeldung wurde abgebrochen.",
+      "banned": "Dieses Konto wurde gesperrt.",
+      "unavailable": "Die Anmeldung ist gerade nicht verfügbar.",
+      "error": "Die Anmeldung ist fehlgeschlagen. Bitte versuch es noch einmal."
+    }
+  },
+  "legal": {
+    "privacy": "Datenschutz",
+    "imprint": "Impressum",
+    "credits": "Mitwirkende",
+    "close": "Schließen",
+    "offline": "Die Rechtstexte konnten nicht geladen werden. Bitte versuch es erneut, wenn du online bist.",
+    "creditsText": "LSG ist freie Software ohne gekaufte Assets. Alle Sounds und die Musik entstehen in deinem Browser. 3D-Modelle und Effekte werden prozedural erzeugt. Fremd-Assets und ihre Lizenzen stehen in der Projektdokumentation (docs/ASSETS.md).",
+    "assetsHeading": "Fremd-Assets (CC0)",
+    "assetLine": "{name} von {authors} — {usedFor}"
+  }
+}

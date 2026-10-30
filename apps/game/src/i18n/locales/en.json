@@ -3,7 +3,11 @@
     "title": "LSG",
     "tagline": "Lane Shooting Game",
     "loading": "Loading…",
-    "controlsHint": "Drag or use A / D to steer · your squad shoots automatically"
+    "controlsHint": "Drag or use A / D to steer · your squad shoots automatically",
+    "updateAvailable": "A new version of LSG is available.",
+    "update": "Update",
+    "offlineReady": "LSG is ready to play offline.",
+    "install": "Install as app"
   },
   "menu": {
     "playLevel": "Play level {n}",
@@ -129,7 +133,9 @@
     "resetProgress": "Reset local progress",
     "resetConfirm": "Delete all local progress on this device? This cannot be undone.",
     "credits": "Credits",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "fullscreen": "Fullscreen",
+    "app": "App"
   },
   "language": {
     "en": "English",
@@ -210,6 +216,8 @@
     "credits": "Credits",
     "close": "Close",
     "offline": "The legal texts could not be loaded. Please try again when you are online.",
-    "creditsText": "LSG is free software made without purchased assets. All sounds and music are generated in your browser. 3D models and effects are created procedurally. Third-party assets and their licenses are listed in the project documentation (docs/ASSETS.md)."
+    "creditsText": "LSG is free software made without purchased assets. All sounds and music are generated in your browser. 3D models and effects are created procedurally. Third-party assets and their licenses are listed in the project documentation (docs/ASSETS.md).",
+    "assetsHeading": "Third-party assets (CC0)",
+    "assetLine": "{name} by {authors} — {usedFor}"
   }
 }
