@@ -1,24 +1,15 @@
-import { BoxGeometry, CylinderGeometry, Mesh, MeshStandardMaterial, type Scene } from 'three';
+import { Mesh, type BufferGeometry, type Material, type Scene } from 'three';
 import type { Simulation } from '../../sim/simulation.ts';
-import { PALETTE } from '../palette.ts';
+import { buildBarrel, buildBarrier } from '../models/props.ts';
+import { createStaticMaterial } from '../models/static-material.ts';
 
 /** Barriers (indestructible walls) and explosive barrels. */
 export class ObstacleView {
   private readonly scene: Scene;
   private readonly meshes = new Map<number, Mesh>();
-  private readonly barrierGeometry = new BoxGeometry(1, 1.4, 1);
-  private readonly barrelGeometry = new CylinderGeometry(0.55, 0.55, 1.2, 16);
-  private readonly barrierMaterial = new MeshStandardMaterial({
-    color: PALETTE.barrier,
-    roughness: 0.7,
-    metalness: 0.3,
-  });
-  private readonly barrelMaterial = new MeshStandardMaterial({
-    color: PALETTE.barrel,
-    roughness: 0.5,
-    metalness: 0.4,
-    emissive: 0x401000,
-  });
+  private readonly barrierGeometry: BufferGeometry = buildBarrier();
+  private readonly barrelGeometry: BufferGeometry = buildBarrel();
+  private readonly material: Material = createStaticMaterial(2.5);
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -32,18 +23,18 @@ export class ObstacleView {
       let mesh = this.meshes.get(obstacle.id);
       if (!mesh) {
         const isBarrel = obstacle.kind === 'barrel';
-        mesh = new Mesh(
-          isBarrel ? this.barrelGeometry : this.barrierGeometry,
-          isBarrel ? this.barrelMaterial : this.barrierMaterial,
-        );
+        mesh = new Mesh(isBarrel ? this.barrelGeometry : this.barrierGeometry, this.material);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-        if (!isBarrel) mesh.scale.set(obstacle.width, 1, obstacle.depth);
+        if (!isBarrel) mesh.scale.set(obstacle.width, 1, Math.max(1, obstacle.depth / 0.75));
         this.scene.add(mesh);
         this.meshes.set(obstacle.id, mesh);
       }
       const z = obstacle.prevZ + (obstacle.z - obstacle.prevZ) * alpha;
-      mesh.position.set(obstacle.x, obstacle.kind === 'barrel' ? 0.6 : 0.7, z);
+      mesh.position.set(obstacle.x, 0, z);
+      // Barrels shake when hit.
+      mesh.rotation.z =
+        obstacle.kind === 'barrel' && obstacle.hitFlash > 0 ? (Math.random() - 0.5) * 0.12 : 0;
     }
     for (const [id, mesh] of this.meshes) {
       if (seen.has(id)) continue;

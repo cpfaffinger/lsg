@@ -12,6 +12,11 @@ async function boot(): Promise<void> {
   const canvas = document.querySelector<HTMLCanvasElement>('#scene');
   const ui = document.querySelector<HTMLDivElement>('#ui');
   if (!canvas || !ui) throw new Error('Missing #scene or #ui element');
+  if (import.meta.env.DEV && new URLSearchParams(location.search).has('viewer')) {
+    const { startModelViewer } = await import('./dev/model-viewer.ts');
+    await startModelViewer(canvas);
+    return;
+  }
 
   const game = new Game(canvas, ui);
   await game.init();

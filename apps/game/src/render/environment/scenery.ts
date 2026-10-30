@@ -102,16 +102,6 @@ function desertStrip(rng: Rng, b: Builder): void {
       y += h;
     }
   }
-  for (let z = 0; z < STRIP_LENGTH; z += rng.range(20, 30)) {
-    // Dunes.
-    const x = sideX(rng, 6, 22);
-    const r = rng.range(4, 9);
-    b.add(
-      sphere(r, 1, Math.PI / 2),
-      { color: 0xcd975d, roughness: 1 },
-      { position: [x, -r * 0.08, -z], scale: [1.8, 0.22, 1.2] },
-    );
-  }
 }
 
 // ------------------------------------------------------------------ city

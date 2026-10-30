@@ -2,7 +2,7 @@ import type { BufferGeometry } from 'three';
 import { ModelBuilder, PART } from './model-builder.ts';
 import { capsule, cyl, rbox, sphere, type Detail } from './shapes.ts';
 
-const SKIN = 0xe8b48a;
+const SKIN = 0xd9a07a;
 const GUNMETAL = 0x2a2f38;
 const DARK = 0x3a3f4a;
 const BOOT = 0x22252b;
@@ -86,8 +86,8 @@ export function buildSoldier(detail: Detail = 1): BufferGeometry {
     { position: [-0.17, 0.7, -0.12], rotation: [-1.05, 0, 0.25] },
   );
   b.add(
-    sphere(0.05, detail),
-    { color: SKIN, part: PART.armLeft, pivot: shoulder, roughness: 0.7 },
+    sphere(0.038, detail),
+    { color: 0x2a2d33, part: PART.armLeft, pivot: shoulder, roughness: 0.8 },
     { position: [-0.1, 0.66, -0.27] },
   );
   b.mirror(
@@ -101,8 +101,8 @@ export function buildSoldier(detail: Detail = 1): BufferGeometry {
     { position: [-0.17, 0.7, -0.12], rotation: [-1.05, 0, 0.25] },
   );
   b.mirror(
-    sphere(0.05, detail),
-    { color: SKIN, part: PART.armLeft, pivot: shoulder, roughness: 0.7 },
+    sphere(0.038, detail),
+    { color: 0x2a2d33, part: PART.armLeft, pivot: shoulder, roughness: 0.8 },
     { position: [-0.1, 0.66, -0.27] },
   );
 

@@ -149,6 +149,8 @@ export class Game {
       this.renderer.applyQuality(quality);
       this.effects.applyQuality(quality);
     }
+    this.world.squad.setDetail(quality.level === 'low' ? 0 : 1);
+    this.world.enemies.lodBias = quality.lodBias;
     if (s.locale && s.locale !== getLocale()) void setLocale(s.locale);
   }
 
