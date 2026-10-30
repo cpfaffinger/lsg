@@ -12,6 +12,7 @@ import type { EnemyKind } from '../../sim/types.ts';
 import { createAnimatedMaterials } from '../models/animated-material.ts';
 import { buildEnemy, ENEMY_ANIMATION } from '../models/enemies.ts';
 import type { Detail } from '../models/shapes.ts';
+import { createSkinnedMaterials, instanceGeometry, type CharacterId } from '../models/skinned-character.ts';
 
 const CAPACITY: Record<EnemyKind, number> = {
   runner: 600,
@@ -21,6 +22,12 @@ const CAPACITY: Record<EnemyKind, number> = {
   shield: 80,
   miniboss: 4,
   boss: 2,
+};
+
+/** Enemy kinds played by animated characters, with their size in the world. */
+const CHARACTER_KINDS: Partial<Record<EnemyKind, { id: CharacterId; scale: number }>> = {
+  runner: { id: 'enemy', scale: 0.56 },
+  shooter: { id: 'hazmat', scale: 0.62 },
 };
 
 const BIG_KINDS: ReadonlySet<EnemyKind> = new Set(['boss', 'miniboss', 'tank']);
@@ -50,14 +57,21 @@ export class EnemyView {
 
   constructor(scene: Scene) {
     for (const kind of Object.keys(CAPACITY) as EnemyKind[]) {
-      const { profile } = ENEMY_ANIMATION[kind];
-      const materials = createAnimatedMaterials(profile);
+      const animated = CHARACTER_KINDS[kind];
+      const materials = animated
+        ? createSkinnedMaterials(animated.id)
+        : createAnimatedMaterials(ENEMY_ANIMATION[kind].profile);
       const make = (detail: Detail) => {
         const capacity = CAPACITY[kind];
         const params = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
         params.setUsage(DynamicDrawUsage);
-        const geometry = buildEnemy(kind, detail);
-        geometry.setAttribute('iParams', params);
+        let geometry;
+        if (animated) {
+          geometry = instanceGeometry(animated.id, detail, params);
+        } else {
+          geometry = buildEnemy(kind, detail);
+          geometry.setAttribute('iParams', params);
+        }
         const mesh = new InstancedMesh(geometry, materials.material, capacity);
         mesh.customDepthMaterial = materials.depth;
         mesh.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -103,10 +117,14 @@ export class EnemyView {
       const yaw = Math.atan2(sim.squadX - x, Math.max(4, -z)) * 0.6;
       this.position.set(x, 0, z);
       this.quaternion.setFromAxisAngle(this.up, yaw);
+      const animated = CHARACTER_KINDS[enemy.kind];
+      this.scale.setScalar(animated?.scale ?? 1);
       this.matrix.compose(this.position, this.quaternion, this.scale);
       mesh.setMatrixAt(index, this.matrix);
       params[index * 4] = enemy.seed;
-      params[index * 4 + 1] = ENEMY_ANIMATION[enemy.kind].gait;
+      // Character enemies pick a clip (0 run, 1 stand and fire), the others a gait speed.
+      const holding = enemy.holdZ !== null && enemy.z >= enemy.holdZ - 0.1;
+      params[index * 4 + 1] = animated ? (holding ? 1 : 0) : ENEMY_ANIMATION[enemy.kind].gait;
       // Big enemies are hit almost every frame; a strong flash would bleach them white.
       params[index * 4 + 2] = enemy.hitFlash > 0 ? (BIG_KINDS.has(enemy.kind) ? 0.08 : 0.6) : 0;
       params[index * 4 + 3] = 0;

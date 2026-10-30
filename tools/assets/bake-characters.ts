@@ -21,8 +21,10 @@ interface CharacterConfig {
   clips: Record<string, string>;
   /** Weapon node names, in the order the game selects them (1, 2, ...). */
   attachments: string[];
-  /** Materials recoloured by the squad skin. */
-  team: string[];
+  /** Materials recoloured by the squad skin, with the brightness of the result. */
+  team: Record<string, number>;
+  /** Materials of rigid body parts (helmet) recoloured by the squad skin. */
+  teamRigid: Record<string, number>;
   /** Share of triangles kept for the detailed and the distant model. */
   lods: [number, number];
 }
@@ -32,22 +34,25 @@ const CHARACTERS: CharacterConfig[] = [
     id: 'soldier',
     clips: { run: 'Run_Gun', hold: 'Idle_Shoot' },
     attachments: ['AK', 'Shotgun', 'Sniper_2', 'RocketLauncher'],
-    team: ['Character_Main'],
-    lods: [0.5, 0.16],
+    team: { Character_Main: 0.85, Pants: 0.28 },
+    teamRigid: { Black: 0.6, Character_Main: 0.85 },
+    lods: [0.34, 0.1],
   },
   {
     id: 'enemy',
     clips: { run: 'Run', hold: 'Punch' },
     attachments: ['Knife_1'],
-    team: [],
-    lods: [0.42, 0.14],
+    team: {},
+    teamRigid: {},
+    lods: [0.4, 0.12],
   },
   {
     id: 'hazmat',
     clips: { run: 'Run_Gun', hold: 'Idle_Shoot' },
     attachments: ['SMG'],
-    team: [],
-    lods: [0.42, 0.14],
+    team: {},
+    teamRigid: {},
+    lods: [0.4, 0.12],
   },
 ];
 
@@ -126,7 +131,8 @@ async function bake(config: CharacterConfig): Promise<void> {
   const addPart = (mesh: Mesh, attach: number, rigidBone: number | null): void => {
     const material = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as Material;
     const standard = material as MeshStandardMaterial;
-    const team = config.team.includes(standard.name) ? 1 : 0;
+    const brightness = (attach === 0 && rigidBone !== null ? config.teamRigid : config.team)[standard.name];
+    const team = brightness === undefined ? 0 : 1;
     const surface = surfaceOf(standard);
     const geometry: BufferGeometry = mergeVertices(mesh.geometry.clone(), 1e-4);
     const position = geometry.getAttribute('position') as BufferAttribute;
@@ -139,7 +145,7 @@ async function bake(config: CharacterConfig): Promise<void> {
     const vertices: Vertex[] = [];
     for (let i = 0; i < position.count; i++) {
       const c = standard.color.clone();
-      if (team) c.setRGB(0.8, 0.8, 0.8);
+      if (brightness !== undefined) c.setRGB(brightness, brightness, brightness);
       else if (color) c.multiply(new Color(color.getX(i), color.getY(i), color.getZ(i)));
       let bones: [number, number] = [rigidBone ?? 0, 0];
       let weights: [number, number] = [1, 0];
@@ -206,7 +212,11 @@ async function bake(config: CharacterConfig): Promise<void> {
     const source = new Uint32Array(part.indices);
     config.lods.forEach((ratio, lod) => {
       const target = Math.max(MIN_TRIANGLES * 3, Math.floor((source.length * ratio) / 3) * 3);
-      const [result] = MeshoptSimplifier.simplify(source, positions, 3, target, 0.05, ['LockBorder']);
+      // Distant models may lose small parts completely; nobody sees them at that size.
+      const options = lod === 0 ? (['LockBorder'] as const) : ([] as const);
+      const [result] = MeshoptSimplifier.simplify(source, positions, 3, target, lod === 0 ? 0.05 : 0.2, [
+        ...options,
+      ]);
       for (const index of result) lodIndices[lod]?.push(index + offset);
     });
   }

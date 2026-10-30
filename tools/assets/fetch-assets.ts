@@ -39,8 +39,14 @@ const ASSETS: AssetRequest[] = [
 
 const OUT = path.resolve('apps/game/src/media');
 
-/** Audio assets, converted by tools/assets/convert-audio.sh. */
+/** Assets from other sources, kept when this script rewrites the credits. */
 const AUDIO_CREDITS = [
+  {
+    name: 'Toon Shooter Game Kit',
+    authors: ['Quaternius'],
+    usedFor: 'soldiers, enemies and weapons',
+    source: 'https://quaternius.com/packs/toonshootergamekit.html',
+  },
   {
     name: 'Sci-Fi Sounds, Impact Sounds, Interface Sounds, Music Jingles',
     authors: ['Kenney'],

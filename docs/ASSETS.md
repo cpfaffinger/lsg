@@ -43,3 +43,13 @@ Alle Dateien liegen konvertiert in `apps/game/src/media/audio/`. `tools/assets/c
 | Fast fight / battle music | Ville Nousiainen, Xythe, mutkanto | Musik Neon City | https://opengameart.org/content/fast-fight-battle-music | CC0 |
 | Friendly Talk On a Robotic Battlefield | illin | Musik Orbit Station | https://opengameart.org/content/friendly-talk-on-a-robotic-battlefield-looped | CC0 |
 | Heavy battle music | Davieplier | Musik Boss | https://opengameart.org/content/heavy-battle-music | CC0 |
+
+## 3D-Figuren (CC0)
+
+`tools/assets/bake-characters.ts` erzeugt aus den GLB-Dateien die kompakten Dateien in `apps/game/src/media/models/`.
+
+| Asset | Urheber | Verwendung | Quelle | Lizenz |
+|-------|---------|------------|--------|--------|
+| Character Soldier (Toon Shooter Game Kit) | Quaternius | Trupp mit allen Waffen | https://poly.pizza/m/PpLF4rt4ah | CC0 |
+| Character Enemy (Toon Shooter Game Kit) | Quaternius | Läufer | https://poly.pizza/m/mdGe4IN31v | CC0 |
+| Character Hazmat (Toon Shooter Game Kit) | Quaternius | Schützen | https://poly.pizza/m/z3TSQYx1Kn | CC0 |

@@ -23,11 +23,9 @@ import type { EnemyKind } from '../sim/types.ts';
 import {
   createAnimatedMaterials,
   sharedAnimationUniforms,
-  WALK,
   type AnimationProfile,
 } from '../render/models/animated-material.ts';
 import { buildEnemy, ENEMY_ANIMATION } from '../render/models/enemies.ts';
-import { buildSoldier } from '../render/models/soldier.ts';
 
 /**
  * Development-only turntable for the procedural models (open the game with ?viewer).
@@ -69,26 +67,7 @@ export async function startModelViewer(canvas: HTMLCanvasElement): Promise<void>
     x: number;
     size: number;
     team?: number;
-  }[] = [
-    {
-      name: 'soldier',
-      geometry: buildSoldier(detail),
-      profile: WALK,
-      gait: 11,
-      x: -11,
-      size: 1,
-      team: 0x2f8cff,
-    },
-    {
-      name: 'soldier2',
-      geometry: buildSoldier(detail),
-      profile: WALK,
-      gait: 11,
-      x: -9.8,
-      size: 1,
-      team: 0xc0303e,
-    },
-  ];
+  }[] = [];
   const kinds: EnemyKind[] = ['runner', 'shooter', 'shield', 'splitter', 'tank', 'miniboss', 'boss'];
   const spacing = [1.4, 1.6, 1.9, 2.2, 3.2, 5, 6.5];
   let x = -8.2;

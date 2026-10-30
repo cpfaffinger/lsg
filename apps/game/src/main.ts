@@ -3,6 +3,7 @@ import './styles/menus.css';
 import { Game } from './game.ts';
 import { initLocale, t } from './i18n/i18n.ts';
 import { mediaUrl } from './media.ts';
+import { preloadCharacters } from './render/models/skinned-character.ts';
 import { AccountService } from './net/account-service.ts';
 import { buildAccountPanel, buildLegalPanel } from './ui/account-screens.ts';
 import { button, h } from './ui/dom.ts';
@@ -49,6 +50,7 @@ async function boot(): Promise<void> {
     return;
   }
 
+  await preloadCharacters();
   const game = new Game(canvas, ui);
   await game.init();
   const account = new AccountService(game.progress);

@@ -4,6 +4,7 @@ import {
   Color,
   DataTexture,
   FloatType,
+  type InstancedBufferAttribute,
   MeshDepthMaterial,
   MeshStandardMaterial,
   NearestFilter,
@@ -104,6 +105,22 @@ export function character(id: CharacterId): CharacterAsset {
   const asset = assets.get(id);
   if (!asset) throw new Error(`Character ${id} is not loaded`);
   return asset;
+}
+
+/** A geometry for one instanced mesh; it shares the vertex data of the character. */
+export function instanceGeometry(
+  id: CharacterId,
+  detail: 0 | 1,
+  params: InstancedBufferAttribute,
+): BufferGeometry {
+  const source = character(id).geometries[detail === 1 ? 0 : 1];
+  const geometry = new BufferGeometry();
+  for (const [name, attribute] of Object.entries(source.attributes)) {
+    geometry.setAttribute(name, attribute);
+  }
+  geometry.setIndex(source.index);
+  geometry.setAttribute('iParams', params);
+  return geometry;
 }
 
 /**

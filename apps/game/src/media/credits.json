@@ -100,5 +100,11 @@
     "authors": ["Davieplier"],
     "usedFor": "boss music",
     "source": "https://opengameart.org/content/heavy-battle-music"
+  },
+  {
+    "name": "Toon Shooter Game Kit",
+    "authors": ["Quaternius"],
+    "usedFor": "soldiers, enemies and weapons",
+    "source": "https://quaternius.com/packs/toonshootergamekit.html"
   }
 ]

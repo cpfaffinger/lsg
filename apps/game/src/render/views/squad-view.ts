@@ -12,14 +12,22 @@ import { formationSlot, visibleUnits, type SlotOffset } from '../../sim/formatio
 import type { Simulation } from '../../sim/simulation.ts';
 import type { SimEvent } from '../../sim/types.ts';
 import { SQUAD_Z } from '../../sim/world.ts';
-import { createAnimatedMaterials, WALK, type AnimatedMaterials } from '../models/animated-material.ts';
-import { buildSoldier } from '../models/soldier.ts';
-import { PALETTE } from '../palette.ts';
+import type { WeaponId } from '../../sim/types.ts';
 import type { Detail } from '../models/shapes.ts';
+import {
+  createSkinnedMaterials,
+  instanceGeometry,
+  type SkinnedMaterials,
+} from '../models/skinned-character.ts';
+import { PALETTE } from '../palette.ts';
 
 const CAP = BALANCE.squad.visibleCap;
-/** Running cadence in radians per second. */
-const GAIT_SPEED = 11;
+/** The model is about 2.1 units tall; soldiers stand about 1.3 units tall in the world. */
+const SOLDIER_SCALE = 0.62;
+/** From this many visible soldiers on, the simple model is used. */
+const CROWD_SIZE = 50;
+/** Order of the weapons in the baked soldier model. */
+const WEAPON_MODEL: Record<WeaponId, number> = { rifle: 1, spread: 2, laser: 3, rocket: 4 };
 /** How fast the recoil kick fades, per second. */
 const RECOIL_DECAY = 16;
 
@@ -33,12 +41,12 @@ interface UnitState {
 }
 
 /**
- * Renders the squad as one instanced, procedurally animated soldier mesh. Each visible unit
+ * Renders the squad as one instanced, skeletally animated soldier mesh. Each visible unit
  * eases towards its formation slot, new units pop in, lost units vanish from the back rows.
  */
 export class SquadView {
   readonly mesh: InstancedMesh;
-  private readonly materials: AnimatedMaterials;
+  private readonly materials: SkinnedMaterials;
   private readonly params: InstancedBufferAttribute;
   private readonly units: UnitState[] = [];
   private readonly slot: SlotOffset = { x: 0, z: 0 };
@@ -47,6 +55,7 @@ export class SquadView {
   private readonly quaternion = new Quaternion();
   private readonly scaleVec = new Vector3();
   private detail: Detail = 1;
+  private maxDetail: Detail = 1;
   private readonly scene: Scene;
 
   /** World-space x of the squad centre for the current render frame. */
@@ -54,15 +63,16 @@ export class SquadView {
 
   constructor(scene: Scene) {
     this.scene = scene;
-    this.materials = createAnimatedMaterials(WALK, PALETTE.squad);
+    // The model looks along +z, the squad runs towards -z.
+    this.quaternion.setFromAxisAngle(new Vector3(0, 1, 0), Math.PI);
+    this.materials = createSkinnedMaterials('soldier', PALETTE.squad);
     this.params = new InstancedBufferAttribute(new Float32Array(CAP * 4), 4);
     this.params.setUsage(DynamicDrawUsage);
     this.mesh = this.createMesh(1);
   }
 
   private createMesh(detail: Detail): InstancedMesh {
-    const geometry = buildSoldier(detail);
-    geometry.setAttribute('iParams', this.params);
+    const geometry = instanceGeometry('soldier', detail, this.params);
     const mesh = new InstancedMesh(geometry, this.materials.material, CAP);
     mesh.customDepthMaterial = this.materials.depth;
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -73,15 +83,17 @@ export class SquadView {
     return mesh;
   }
 
-  /** Switches between the detailed and the low-poly soldier (quality setting). */
+  /** Sets the best soldier model the quality setting allows. */
   setDetail(detail: Detail): void {
+    this.maxDetail = detail;
+  }
+
+  /** Crowds use the simple model: individual details vanish anyway and the triangles add up. */
+  private applyDetail(count: number): void {
+    const detail: Detail = count > CROWD_SIZE ? 0 : this.maxDetail;
     if (detail === this.detail) return;
     this.detail = detail;
-    const old = this.mesh.geometry;
-    const geometry = buildSoldier(detail);
-    geometry.setAttribute('iParams', this.params);
-    this.mesh.geometry = geometry;
-    old.dispose();
+    this.mesh.geometry = instanceGeometry('soldier', detail, this.params);
   }
 
   /** Recolours the squad (skins). */
@@ -101,6 +113,8 @@ export class SquadView {
   update(sim: Simulation, alpha: number, frameDt: number): void {
     const count = visibleUnits(sim.units);
     this.centerX = sim.prevSquadX + (sim.squadX - sim.prevSquadX) * alpha;
+    this.materials.attach.value = WEAPON_MODEL[sim.weapon];
+    this.applyDetail(count);
 
     while (this.units.length < count) {
       // New units spawn at the squad centre and grow into their slot.
@@ -120,12 +134,12 @@ export class SquadView {
       unit.z += (this.slot.z - unit.z) * ease;
       unit.scale += (1 - unit.scale) * grow;
       this.position.set(this.centerX + unit.x, 0, SQUAD_Z + unit.z);
-      this.scaleVec.setScalar(unit.scale);
+      this.scaleVec.setScalar(unit.scale * SOLDIER_SCALE);
       this.matrix.compose(this.position, this.quaternion, this.scaleVec);
       this.mesh.setMatrixAt(i, this.matrix);
       unit.recoil *= recoilDecay;
       params[i * 4] = unit.phase;
-      params[i * 4 + 1] = GAIT_SPEED;
+      params[i * 4 + 1] = 0;
       params[i * 4 + 2] = 0;
       params[i * 4 + 3] = unit.recoil;
     }
