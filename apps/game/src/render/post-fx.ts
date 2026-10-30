@@ -90,9 +90,15 @@ export class PostFX {
     });
     const toneMapping = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
 
-    const effects: Effect[] = [this.bloom, this.chroma, this.hue, this.contrast, this.vignette, toneMapping];
-    if (!quality.antialias) effects.push(new SMAAEffect({ preset: SMAAPreset.LOW }));
+    // Order matters: bloom works on HDR values, tone mapping brings them into 0..1, and only
+    // then is colour graded. Grading HDR values first pushed saturated, bright colours (neon,
+    // car paint) negative, which tone mapping turned into black NaN pixels.
+    const effects: Effect[] = [this.bloom, this.chroma, toneMapping, this.hue, this.contrast, this.vignette];
     composer.addPass(new EffectPass(this.camera, ...effects));
+    // An EffectPass may contain only one convolution effect (chromatic aberration already is
+    // one), so SMAA gets its own pass at the end of the chain.
+    if (!quality.antialias)
+      composer.addPass(new EffectPass(this.camera, new SMAAEffect({ preset: SMAAPreset.LOW })));
     this.composer = composer;
     this.applyGrading(this.grading);
     const size = this.renderer.getSize(new Vector2());

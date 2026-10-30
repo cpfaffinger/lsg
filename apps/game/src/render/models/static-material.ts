@@ -52,7 +52,13 @@ float lsgHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.545
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
 vec3 an = abs(vObjNormal);
-if (an.y < 0.5) {
+if (an.y >= 0.5) {
+  // Rooftops are visible from the high camera: give them a lighter concrete tone and a
+  // subtle panel grid instead of a flat dark face.
+  vec2 roof = fract(vObjPos.xz / 3.0);
+  float seam = step(0.94, max(roof.x, roof.y));
+  diffuseColor.rgb = mix(vec3(0.16, 0.17, 0.21), vec3(0.08, 0.085, 0.1), seam);
+} else {
   vec2 facade = an.x > 0.5 ? vObjPos.zy : vObjPos.xy;
   vec2 grid = facade / vec2(1.5, 2.1);
   vec2 cell = floor(grid);

@@ -247,6 +247,7 @@ export class Game {
     this.sim = new Simulation(level, this.modifiers);
     this.renderer.setWorld(level.world);
     this.effects.setWorld(level.world);
+    this.audio.setWorld(level.world);
     this.resultShown = false;
     this.lastDistance = 0;
     this.frameEvents.length = 0;
@@ -323,6 +324,14 @@ export class Game {
       });
     show();
     this.refreshScreen = show;
+    // One rising chime per star, in sync with the star animation.
+    for (let i = 0; i < reward.stars; i++) {
+      window.setTimeout(
+        () => this.audio.play('gateStep', { volume: 0.5, rate: 1 + i * 0.25, jitter: 0 }),
+        250 + i * 300,
+      );
+    }
+    if (reward.total > 0) window.setTimeout(() => this.audio.play('coin', { volume: 0.5, jitter: 0 }), 1250);
   }
 
   // ------------------------------------------------------------------ menus

@@ -1,3 +1,4 @@
+import type { WorldId } from '../sim/level.ts';
 import { MusicSequencer, type MusicMood } from './music.ts';
 import { buildSfx, type SfxId } from './sfx-synth.ts';
 
@@ -68,6 +69,7 @@ export class AudioManager {
     this.buffers = buildSfx(ctx);
     this.music = new MusicSequencer(ctx, this.musicBus);
     this.music.setMood(this.mood);
+    this.music.setWorld(this.worldId);
     this.music.start();
   }
 
@@ -91,6 +93,13 @@ export class AudioManager {
 
   resume(): void {
     if (this.ctx?.state === 'suspended') void this.ctx.resume();
+  }
+
+  private worldId: WorldId = 'desert';
+
+  setWorld(world: WorldId): void {
+    this.worldId = world;
+    this.music?.setWorld(world);
   }
 
   setMood(mood: MusicMood): void {

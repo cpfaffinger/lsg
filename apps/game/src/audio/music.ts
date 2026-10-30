@@ -4,7 +4,56 @@
  * so the soundtrack reacts to the action without any audio files.
  */
 
+import type { WorldId } from '../sim/level.ts';
+
 export type MusicMood = 'menu' | 'play' | 'boss' | 'result';
+
+/** Each world gets its own key, chord progression, tempo and arpeggio timbre. */
+interface WorldMusic {
+  progression: number[][];
+  lead: number[];
+  tempo: number;
+  arpWave: OscillatorType;
+}
+
+const WORLD_MUSIC: Record<WorldId, WorldMusic> = {
+  // A minor: i - VI - III - VII, bright square arps.
+  desert: {
+    progression: [
+      [57, 60, 64],
+      [53, 57, 60],
+      [48, 52, 55],
+      [55, 59, 62],
+    ],
+    lead: [69, -1, 72, 71, 69, -1, 67, 69, 64, -1, 67, 69, 72, 74, 72, -1],
+    tempo: 1,
+    arpWave: 'square',
+  },
+  // E minor synthwave: i - VI - III - VII with saw arps.
+  city: {
+    progression: [
+      [52, 55, 59],
+      [48, 52, 55],
+      [55, 59, 62],
+      [50, 54, 57],
+    ],
+    lead: [71, -1, 74, -1, 76, 74, 71, -1, 69, -1, 71, 74, 76, -1, 79, 76],
+    tempo: 0.94,
+    arpWave: 'sawtooth',
+  },
+  // D minor, airy triangle arps for space.
+  station: {
+    progression: [
+      [50, 53, 57],
+      [46, 50, 53],
+      [53, 57, 60],
+      [48, 52, 55],
+    ],
+    lead: [74, 77, -1, 76, 74, -1, 72, 74, 69, -1, 72, -1, 74, 76, 77, -1],
+    tempo: 1.06,
+    arpWave: 'triangle',
+  },
+};
 
 interface MoodSettings {
   bpm: number;
@@ -24,15 +73,6 @@ const MOODS: Record<MusicMood, MoodSettings> = {
   result: { bpm: 96, kick: false, snare: false, hats: 0, bass: false, arp: 2, pad: true, lead: false },
 };
 
-/** A minor: i - VI - III - VII. Each chord as MIDI notes (root first). */
-const PROGRESSION: number[][] = [
-  [57, 60, 64],
-  [53, 57, 60],
-  [48, 52, 55],
-  [55, 59, 62],
-];
-
-const LEAD_MOTIF = [69, -1, 72, 71, 69, -1, 67, 69, 64, -1, 67, 69, 72, 74, 72, -1];
 const BASS_STEPS = new Set([0, 3, 6, 8, 11, 14]);
 const STEPS_PER_BAR = 16;
 
@@ -69,6 +109,13 @@ export class MusicSequencer {
     }
   }
 
+  private world: WorldMusic = WORLD_MUSIC.desert;
+
+  /** Switches key and timbre; takes effect at the next bar. */
+  setWorld(world: WorldId): void {
+    this.world = WORLD_MUSIC[world];
+  }
+
   setMood(mood: MusicMood): void {
     if (mood === this.mood && this.pendingMood === null) return;
     // Switch on the next bar so changes stay musical.
@@ -95,17 +142,17 @@ export class MusicSequencer {
       }
       this.playStep(this.step, this.nextTime);
       const settings = MOODS[this.mood];
-      this.nextTime += 60 / settings.bpm / 4;
-      this.step = (this.step + 1) % (STEPS_PER_BAR * PROGRESSION.length);
+      this.nextTime += 60 / (settings.bpm * this.world.tempo) / 4;
+      this.step = (this.step + 1) % (STEPS_PER_BAR * this.world.progression.length);
     }
   }
 
   private playStep(step: number, time: number): void {
     const m = MOODS[this.mood];
     const stepInBar = step % STEPS_PER_BAR;
-    const bar = Math.floor(step / STEPS_PER_BAR) % PROGRESSION.length;
-    const chord = PROGRESSION[bar] ?? [57, 60, 64];
-    const stepDur = 60 / m.bpm / 4;
+    const bar = Math.floor(step / STEPS_PER_BAR) % this.world.progression.length;
+    const chord = this.world.progression[bar] ?? [57, 60, 64];
+    const stepDur = 60 / (m.bpm * this.world.tempo) / 4;
 
     if (m.kick && stepInBar % 4 === 0) this.kick(time);
     if (m.snare && (stepInBar === 4 || stepInBar === 12)) this.snare(time);
@@ -118,7 +165,7 @@ export class MusicSequencer {
     }
     if (m.pad && stepInBar === 0) this.pad(time, chord, stepDur * STEPS_PER_BAR);
     if (m.lead) {
-      const note = LEAD_MOTIF[stepInBar] ?? -1;
+      const note = this.world.lead[stepInBar] ?? -1;
       if (note > 0) this.lead(time, note + (bar === 3 ? 2 : 0), stepDur * 1.8);
     }
   }
@@ -193,7 +240,7 @@ export class MusicSequencer {
 
   private arp(time: number, midi: number, duration: number): void {
     const osc = this.ctx.createOscillator();
-    osc.type = 'square';
+    osc.type = this.world.arpWave;
     osc.frequency.value = midiToHz(midi);
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'lowpass';

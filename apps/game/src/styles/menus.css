@@ -477,6 +477,49 @@
   }
 }
 
+/* Phones in landscape: compact title screen so everything fits above the fold. */
+@media (max-height: 500px) {
+  .title-screen {
+    gap: 6px;
+    margin-top: 0;
+  }
+
+  .logo {
+    font-size: 54px;
+  }
+
+  .tagline {
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+
+  .btn.big {
+    padding: 12px 32px;
+    font-size: 18px;
+  }
+
+  .menu-grid {
+    grid-template-columns: repeat(4, minmax(110px, 1fr));
+    width: min(92vw, 620px);
+    margin-top: 10px;
+  }
+
+  .start-hint {
+    display: none;
+  }
+
+  .screen-panel {
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+
+  .star-row.big .star {
+    width: 32px;
+    height: 32px;
+  }
+}
+
 /* -------------------------------------------------------------- account, legal, toasts */
 
 .account-panel {

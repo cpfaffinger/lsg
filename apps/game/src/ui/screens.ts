@@ -37,6 +37,20 @@ export interface MenuHandlers {
 
 const WORLDS: WorldId[] = ['desert', 'city', 'station'];
 
+/** Counts a number up from zero for a satisfying reward reveal. */
+function countUp(element: HTMLElement, target: number, duration = 900): void {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || target <= 0) return;
+  const start = performance.now() + 350;
+  const tick = (now: number) => {
+    const t = Math.min(1, Math.max(0, (now - start) / duration));
+    const eased = 1 - Math.pow(1 - t, 3);
+    element.textContent = `+${formatNumber(Math.round(target * eased))}`;
+    if (t < 1 && element.isConnected) requestAnimationFrame(tick);
+  };
+  element.textContent = '+0';
+  requestAnimationFrame(tick);
+}
+
 function coinBadge(coins: number): HTMLElement {
   return h(
     'div',
@@ -93,6 +107,8 @@ export class Screens {
     this.root.classList.add('active');
     this.root.classList.toggle('dim', dim);
     content.querySelector<HTMLButtonElement>('button.primary')?.focus({ preventScroll: true });
+    for (const el of content.querySelectorAll<HTMLElement>('[data-countup]'))
+      countUp(el, Number(el.dataset.countup));
   }
 
   private page(
@@ -437,7 +453,15 @@ export class Screens {
     }
     coinList.append(
       h('dt', { class: 'total', text: t('result.total') }),
-      h('dd', { class: 'total' }, h('span', { class: 'coin-icon' }), `+${formatNumber(reward.total)}`),
+      h(
+        'dd',
+        { class: 'total' },
+        h('span', { class: 'coin-icon' }),
+        h('span', {
+          attrs: { 'data-countup': String(reward.total) },
+          text: `+${formatNumber(reward.total)}`,
+        }),
+      ),
     );
     const body = h(
       'div',
