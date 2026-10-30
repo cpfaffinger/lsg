@@ -20,6 +20,14 @@ Die Datei `REVISION` im Projektordner nennt den ausgelieferten Commit.
 
 ## Update ausrollen
 
+Der normale Weg ist das Skript: `tools/deploy/deploy.example` nach `.deploy.local` kopieren, ausfüllen und dann
+
+```bash
+sh tools/deploy/deploy.sh
+```
+
+ausführen. Es liefert den committeten Stand aus, baut die Images, lädt den Dienst neu und wartet auf den Healthcheck. Von Hand geht es so.
+
 Lokal im Projektordner:
 
 ```bash

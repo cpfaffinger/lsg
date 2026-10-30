@@ -47,24 +47,25 @@ Your squad runs forward on its own and fires automatically. You only steer left 
 - **30-level campaign** through three worlds, Dust Valley, Neon City and Orbit Station, with mini-bosses and bosses, plus an **endless mode**.
 - **Gates that count**: each gate changes exactly the soldiers who pass through it.
 - **Four weapons**: rifle, spread gun, piercing laser and rockets, from gates or as a start weapon from the shop.
-- **Hordes and specialists**: runners, tanks, shooters, splitters and shield bearers.
+- **Real hordes** from the first level: waves grow with your squad, alongside tanks, shooters, splitters and shield bearers.
 - **Fair progression**: upgrades, weapons and skins cost in-game coins only. There is nothing to buy with real money.
 - **Built for phones, equally good on desktop**: one-finger steering or keyboard, automatic quality adjustment, portrait and landscape.
 - **Installable and offline-capable** as a Progressive Web App, playable as a guest without any account.
 - **Optional Google sign-in** to carry your progress across devices.
+- **Four music styles** to switch between: standard, synthwave, 90s disco and EDM.
 - **English and German**, with reduced-motion, colorblind and haptics settings.
 - **Debug replays**: download any run as a small JSON file and rerun it step by step.
 
 ## How it is built
 
-| Part       | Technology                                                                                      |
-| ---------- | ----------------------------------------------------------------------------------------------- |
-| Game       | TypeScript, Three.js, Vite, fixed-step deterministic simulation, GPU particles, post-processing |
-| Admin area | Preact single-page app under `/admin`                                                           |
-| Backend    | Fastify on Node 24, SQLite via `node:sqlite`                                                    |
-| Sign-in    | Google OpenID Connect with PKCE; the admin area uses local accounts with optional TOTP          |
-| Delivery   | Docker Compose with nginx, one plain HTTP port, content-hashed assets, service worker           |
-| Balancing  | Bots that play every level, an automatic tuner and a full-campaign economy simulation           |
+| Part       | Technology                                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------------------------ |
+| Game       | TypeScript, Three.js, Vite, deterministic simulation, GPU-instanced skeletal animation, particles, post-processing |
+| Admin area | Preact single-page app under `/admin`                                                                              |
+| Backend    | Fastify on Node 24, SQLite via `node:sqlite`                                                                       |
+| Sign-in    | Google OpenID Connect with PKCE; the admin area uses local accounts with optional TOTP                             |
+| Delivery   | Docker Compose with nginx, one plain HTTP port, content-hashed assets, service worker                              |
+| Balancing  | Bots that play every level, an automatic tuner and a full-campaign economy simulation                              |
 
 ```
 apps/game        Three.js game client
@@ -161,4 +162,4 @@ In the dev build, `http://localhost:5173/?viewer` opens a model viewer and the r
 
 ## Credits
 
-Textures and lighting environments come from [Poly Haven](https://polyhaven.com) under CC0. Every third-party asset is listed with its source and license in [docs/ASSETS.md](docs/ASSETS.md) and in the game's credits. Concept and roadmap live in [docs/](docs/) (German).
+Characters and weapons come from [Quaternius](https://quaternius.com), sound effects from [Kenney](https://kenney.nl), music from artists on [OpenGameArt](https://opengameart.org), and textures and lighting from [Poly Haven](https://polyhaven.com), all under CC0. Every third-party asset is listed with its source and license in [docs/ASSETS.md](docs/ASSETS.md) and in the game's credits. Concept and roadmap live in [docs/](docs/) (German).
