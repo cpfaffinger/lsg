@@ -42,6 +42,27 @@ server runs, use the snapshots in `data/backups/` (created with SQLite `VACUUM I
 **Keep `secret.key` together with the database**: without it, stored secrets such as the Google
 client secret cannot be decrypted.
 
+### First start: admin account
+
+On the first start the API creates an admin account:
+
+- With `LSG_ADMIN_USER` / `LSG_ADMIN_PASSWORD` (12+ characters) in `.env`, those credentials are used.
+- Otherwise a random password is generated and written to `data/initial-admin-password.txt`
+  (also printed to `docker compose logs api`). You must change it on first login; the file is then deleted.
+
+Open `http://<host>:8080/admin/`. The admin area uses local accounts only (never Google) and supports
+an authenticator app as second factor.
+
+### Google sign-in for players (optional)
+
+Players can always play as guests. To let them keep progress across devices:
+
+1. Admin → **Settings** → set the **Public URL** (e.g. `https://lsg.example.com`).
+2. Admin → **Google sign-in** shows a step-by-step guide with the exact values to enter in the
+   Google Cloud Console (JavaScript origin, redirect URI `…/api/auth/google/callback`, authorized
+   domain, scopes) with copy buttons.
+3. Paste the client ID and secret (stored encrypted), run **Test sign-in with Google**, then enable it.
+
 ### Running behind Cloudflare
 
 - Set the public URL in the admin area (Settings → Public URL), e.g. `https://lsg.example.com`.
