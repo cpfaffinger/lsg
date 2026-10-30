@@ -27,3 +27,4 @@ Ad-free, high-polish 3D lane shooter for the browser. Concept and roadmap (Germa
 - Prod: `docker compose up -d --build` → http://localhost:8080
 - Dev: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build` → game :5173, admin :5174/admin/
 - Deviations from the original plan are logged in `docs/PLAN.md` ("Änderungsprotokoll").
+- Production runs at https://lsg.gleesh.net; deployment steps are in `docs/DEPLOY.md`.

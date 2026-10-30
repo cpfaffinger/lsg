@@ -45,6 +45,7 @@ Abweichungen vom ursprünglichen Plan, mit Begründung. Wo dieser Abschnitt und 
 | 2026-10-30 | M8 | Neue **Wirtschafts-Simulation** (`tools/balance/economy.ts`): Bots spielen die Kampagne der Reihe nach, kaufen Upgrades und wiederholen verlorene Level | Ergebnis: guter Bot 30 Versuche, durchschnittlicher 33, schwacher 32 für die ganze Kampagne; keine Grind-Wand |
 | 2026-10-30 | M8 | Combo-Zähler im HUD und beste Combo im Ergebnis; Zeitlupe am Levelende (auch beim Boss-Kill) | Juice-Feinschliff aus dem M8-Plan |
 | 2026-10-30 | M8 | `.gitignore`-Regel für `data/` auf den Projektstamm verankert | Die Regel blendete auch `apps/game/src/data/` aus; die Level-Daten wurden nachträglich committet |
+| 2026-10-30 | Betrieb | Deployment auf den eigenen Server unter https://lsg.gleesh.net; Host-Port per `LSG_HTTP_BIND` nur lokal gebunden, öffentliche Adresse vorerst über `LSG_PUBLIC_URL` | Der Server hat bereits einen zentralen nginx; Details in `docs/DEPLOY.md`. Der Wert im Admin-Bereich hat Vorrang vor `LSG_PUBLIC_URL` |
 | 2026-10-30 | M8 | Playtest mit Personen, echte Gerätetests, Lighthouse und Offline-Test im echten Browser **nicht autonom durchführbar** | Siehe Abschnitt 7 „Offene Punkte nach 1.0“ |
 
 ## 0. Getroffene Entscheidungen (2026-10-30)
@@ -354,7 +355,7 @@ Alle Meilensteine M0 bis M8 sind umgesetzt und im lokalen Git-Repository (`maste
 Diese Punkte brauchen Menschen oder echte Geräte und sind daher offen:
 - **Playtest** mit mehreren Personen, besonders Schwierigkeit ab Welt 2 und die Boss-Level 20 und 30.
 - **Gerätetests** auf echten Handys (iOS Safari: Audio-Freischaltung, Vollbild, Safe Areas; Android Chrome: Installation als App).
-- **Offline-Test der PWA** im normalen Browser: Im eingebetteten Testbrowser ließ sich kein Service Worker registrieren. Der erzeugte Service Worker und seine Cache-Liste wurden geprüft, das Verhalten im Flugmodus nicht.
+- **Offline-Test der PWA im Flugmodus**: Auf https://lsg.gleesh.net registriert sich der Service Worker, liefert alle App-Dateien aus dem Cache und speichert die Welt-Medien beim ersten Laden. Das Spielen ohne Netz selbst wurde noch nicht ausprobiert.
 - **Lighthouse-Messung** im echten Browser.
 - **Google-Login** mit echten Zugangsdaten über den Admin-Assistenten einrichten und die Test-Anmeldung ausführen.
 - **Rechtstexte** (Impressum, Datenschutz) im Admin-Bereich prüfen und anpassen.
