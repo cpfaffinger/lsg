@@ -80,7 +80,14 @@ function chooseGates(rng: Rng, params: GeneratorParams, plan: Plan, beat: number
     plan.units += Math.max(0, best) * 0.85;
   };
   const options: Option[] = [
-    { weight: 3, build: () => [{ op: 'units', value: good() }, { op: 'units', value: bad() }], apply: addUnits },
+    {
+      weight: 3,
+      build: () => [
+        { op: 'units', value: good() },
+        { op: 'units', value: bad() },
+      ],
+      apply: addUnits,
+    },
   ];
   if (f.has('factor')) {
     options.push({
@@ -132,7 +139,9 @@ function chooseGates(rng: Rng, params: GeneratorParams, plan: Plan, beat: number
   });
   if (weapons.length > 0) {
     const spotlightWeapon =
-      params.spotlight && weapons.includes(params.spotlight as WeaponId) ? (params.spotlight as WeaponId) : null;
+      params.spotlight && weapons.includes(params.spotlight as WeaponId)
+        ? (params.spotlight as WeaponId)
+        : null;
     options.push({
       weight: spotlightWeapon && beat === 1 ? 50 : 1,
       build: () => [
@@ -175,6 +184,8 @@ function buildWave(rng: Rng, params: GeneratorParams, budget: number, plan: Plan
   for (const special of specials) {
     if (!f.has(special.feature)) continue;
     const spotlight = params.spotlight === special.feature;
+    // The first wave of a level never introduces a kind: the squad is still tiny there.
+    if (beat === 0 && !(spotlight && plan.units >= 6)) continue;
     if (!spotlight && !rng.chance(0.45)) continue;
     let share = budget * special.share * (spotlight ? 1.4 : 1);
     const baseHp = ENEMIES[special.kind].hp;
@@ -202,7 +213,9 @@ function buildWave(rng: Rng, params: GeneratorParams, budget: number, plan: Plan
   let hpScale = remaining / (runnerTarget * runnerHp);
   let count = runnerTarget;
   if (hpScale < 1) {
-    count = clamp(Math.round(remaining / runnerHp), 5, MAX_RUNNERS);
+    // Small squads face small waves: the floor grows with the squad instead of being fixed.
+    const floor = clamp(Math.round(plan.units * 0.8), 2, 5);
+    count = clamp(Math.round(remaining / runnerHp), floor, MAX_RUNNERS);
     hpScale = 1;
   }
   const pattern = rng.pick(['grid', 'grid', 'scatter', 'wedge'] as const);
@@ -223,7 +236,7 @@ export function generateLevel(params: GeneratorParams): LevelDef {
 
     if (params.features.has('barrier') && beat > 0 && rng.chance(0.3)) {
       const side = rng.pick([-1, 1]);
-// Walls stand at one edge so there is always a free side to steer to.
+      // Walls stand at one edge so there is always a free side to steer to.
       const width = rng.range(2, 3);
       segments.push({ type: 'obstacle', at: start + 13, kind: 'barrier', x: side * (5 - width / 2), width });
     }
@@ -246,7 +259,6 @@ export function generateLevel(params: GeneratorParams): LevelDef {
     const kind = params.finale;
     const hpScale = params.bossHpScale ?? Number((hp / ENEMIES[kind].hp).toFixed(3));
     segments.push({ type: 'boss', at: end + 10, kind, hpScale });
-
   }
 
   return {

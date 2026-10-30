@@ -30,8 +30,11 @@ export function playLevel(
   level: LevelDef,
   modifiers: RunModifiers = DEFAULT_MODIFIERS,
   skill: BotSkill = 'good',
-  /** Distance at which the bot commits to a gate; varies reaction time between bot variants. */
-  goodLookahead = 18,
+  /**
+   * Distance at which the bot commits to a gate; varies reaction time between bot variants.
+   * Defaults: 18 for "good", 45 for "average".
+   */
+  lookaheadOverride?: number,
 ) {
   const sim = new Simulation(level, modifiers);
   const timeline: { t: number; distance: number; units: number }[] = [];
@@ -46,7 +49,7 @@ export function playLevel(
   };
   let lastSample = -1;
   for (let t = 0; t < 600 && sim.status === 'running'; t += DT) {
-    const lookahead = skill === 'good' ? goodLookahead : 45;
+    const lookahead = lookaheadOverride ?? (skill === 'good' ? 18 : 45);
     const upcoming = sim.gates.filter((g) => g.alive && g.z < 0 && g.z > -lookahead);
     let targetX = 0;
     if (upcoming.length > 0) {

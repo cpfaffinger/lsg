@@ -61,7 +61,8 @@ export function campaignLevel(levelNumber: number, difficulty?: number, bossHpSc
   let spotlight: Feature | undefined;
   for (const unlock of FEATURE_UNLOCKS) {
     if (unlock.level <= n) features.add(unlock.feature);
-    if (unlock.level === n && unlock.feature !== 'miniboss' && unlock.feature !== 'boss') spotlight = unlock.feature;
+    if (unlock.level === n && unlock.feature !== 'miniboss' && unlock.feature !== 'boss')
+      spotlight = unlock.feature;
   }
   // Bosses only appear as finales; everything else is a regular mechanic.
   features.delete('boss');

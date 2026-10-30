@@ -1,6 +1,6 @@
 dist
 node_modules
-data
+/data
 coverage
 package-lock.json
 assets-src

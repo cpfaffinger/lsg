@@ -3,42 +3,42 @@
 export const CAMPAIGN_DIFFICULTY: readonly number[] = [
   0.412, // level 1
   0.373, // level 2
-  0.467, // level 3
-  0.242, // level 4
-  0.172, // level 5
-  0.163, // level 6
-  0.411, // level 7
-  0.269, // level 8
-  0.273, // level 9
-  0.182, // level 10
-  0.112, // level 11
-  0.369, // level 12
-  0.306, // level 13
-  0.337, // level 14
-  0.227, // level 15
-  0.377, // level 16
-  0.27, // level 17
-  0.161, // level 18
-  0.288, // level 19
-  0.185, // level 20
-  0.207, // level 21
-  0.319, // level 22
-  0.228, // level 23
-  0.24, // level 24
-  0.322, // level 25
-  0.445, // level 26
-  0.263, // level 27
-  0.566, // level 28
-  0.318, // level 29
-  0.107, // level 30
+  0.591, // level 3
+  0.363, // level 4
+  0.254, // level 5
+  0.043, // level 6
+  0.454, // level 7
+  0.374, // level 8
+  0.343, // level 9
+  0.273, // level 10
+  0.25, // level 11
+  0.297, // level 12
+  0.432, // level 13
+  0.344, // level 14
+  0.138, // level 15
+  0.305, // level 16
+  0.136, // level 17
+  0.244, // level 18
+  0.189, // level 19
+  0.042, // level 20
+  0.312, // level 21
+  0.418, // level 22
+  0.338, // level 23
+  0.223, // level 24
+  0.161, // level 25
+  0.325, // level 26
+  0.415, // level 27
+  0.431, // level 28
+  0.261, // level 29
+  0.304, // level 30
 ];
 
 /** Boss / mini-boss HP multipliers per campaign level number. */
 export const CAMPAIGN_BOSS_HP: Readonly<Record<number, number>> = {
-  5: 39.11,
-  10: 5.614,
-  15: 90.785,
-  20: 282.444,
-  25: 91.811,
-  30: 73.778,
+  5: 17.126,
+  10: 22.49,
+  15: 56.743,
+  20: 138.083,
+  25: 242.805,
+  30: 25.239,
 };

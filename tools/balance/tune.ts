@@ -2,7 +2,8 @@
  * Campaign tuner.
  *
  * Phase 1: for every level, binary-search the highest wave difficulty at which three competent
- * bot variants all win while keeping a target share of their squad.
+ * bot variants all win while keeping a target share of their squad, and an average bot (who
+ * commits to gates early and ignores gate shooting) still wins too.
  * Phase 2: for boss and mini-boss levels, search the boss HP so the fight lasts about a target
  * duration while all variants still win.
  *
@@ -54,10 +55,17 @@ function evaluate(level: number, difficulty: number, bossHp?: number) {
   return { survival, allWon, bossSeconds };
 }
 
+function averageWins(level: number, difficulty: number, bossHp?: number): boolean {
+  return playLevel(campaignLevel(level, difficulty, bossHp), modifiersFor(level), 'average').status === 'won';
+}
+
 function tuneDifficulty(level: number, bossHp: number | undefined): number {
-  const passes = (d: number) => evaluate(level, d, bossHp).survival >= targetSurvival(level);
+  const good = (d: number) => evaluate(level, d, bossHp).survival >= targetSurvival(level);
   let lo = 0.03;
   let hi = 1.2;
+  const requireAverage = averageWins(level, lo, bossHp);
+  if (!requireAverage) console.warn(`level ${level}: average bot cannot win even at difficulty ${lo}`);
+  const passes = (d: number) => good(d) && (!requireAverage || averageWins(level, d, bossHp));
   if (!passes(lo)) console.warn(`level ${level}: not winnable even at difficulty ${lo}`);
   for (let i = 0; i < 10; i++) {
     const mid = (lo + hi) / 2;
@@ -84,8 +92,14 @@ function tuneBoss(level: number, difficulty: number): number {
     else hi = mid;
   }
   let hp = Math.exp(lo);
-  // Make sure every variant still wins; shave HP until they do.
-  for (let i = 0; i < 12 && !evaluate(level, difficulty, hp).allWon; i++) hp *= 0.85;
+  // Make sure every variant (and the average bot) still wins; shave HP until they do.
+  // The boss may cost part of the squad, but a competent player must not scrape through.
+  const minSurvival = targetSurvival(level) * 0.5;
+  const wins = (value: number) => {
+    const result = evaluate(level, difficulty, value);
+    return result.allWon && result.survival >= minSurvival && averageWins(level, difficulty, value);
+  };
+  for (let i = 0; i < 40 && hp > 0.2 && !wins(hp); i++) hp *= 0.85;
   return Number(hp.toFixed(3));
 }
 
@@ -93,12 +107,13 @@ const difficulty = [...CAMPAIGN_DIFFICULTY];
 const bossHp: Record<number, number> = { ...CAMPAIGN_BOSS_HP };
 for (let level = from; level <= to; level++) {
   const isFinale = level % 10 === 0 || level % 10 === 5;
-  // Waves first with a provisional boss, then the boss, then waves again with the final boss.
-  const provisional = isFinale ? (bossHp[level] ?? 1) : undefined;
-  let d = tuneDifficulty(level, provisional);
+  // Waves first against a weak provisional boss (independent of earlier tuning runs), then the
+  // boss, then waves again with that boss, then the boss once more for the final wave strength.
+  let d = tuneDifficulty(level, isFinale ? 1 : undefined);
   if (isFinale) {
     bossHp[level] = tuneBoss(level, d);
     d = tuneDifficulty(level, bossHp[level]);
+    bossHp[level] = tuneBoss(level, d);
   }
   difficulty[level - 1] = d;
   const check = evaluate(level, d, isFinale ? bossHp[level] : undefined);
