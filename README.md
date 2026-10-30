@@ -4,6 +4,18 @@ An ad-free, high-polish 3D lane shooter that runs entirely in the browser.
 Move your squad left and right, shoot upgrade gates, beat waves of enemies and bosses.
 No ads, no tracking, no real-money purchases.
 
+## Features
+
+- 30-level campaign in three worlds (desert, city, space station) with mini-bosses and bosses,
+  plus an endless mode.
+- Upgrade gates (units, multipliers, damage, fire rate, weapons), seven enemy kinds, obstacles.
+- Permanent upgrades and cosmetics bought with in-game coins only; stars per level.
+- Procedural 3D models with GPU vertex animation, particle effects, image-based lighting,
+  post-processing, quality presets with automatic adjustment.
+- Synthesized sound effects and music per world, haptics, reduced motion and colorblind options.
+- English and German, installable as a PWA, playable offline as a guest.
+- Optional Google sign-in to sync progress; admin area with a local account.
+
 ## Quick start (Docker Compose)
 
 Requirements: Docker Engine with Compose v2.24+ (on Windows: inside WSL).
@@ -102,6 +114,23 @@ npm test
 npm run build
 ```
 
+### Balancing tools
+
+```bash
+npm run probe                                                        # bots of three skill levels play every campaign level
+node --disable-warning=ExperimentalWarning tools/balance/economy.ts average   # whole campaign with upgrades and retries
+node --disable-warning=ExperimentalWarning tools/balance/tune.ts              # regenerates apps/game/src/data/levels/tuning.ts
+```
+
+The tuner searches each level's wave difficulty and boss strength so that competent bots keep a
+target share of their squad and an average bot still wins. Rerun it after changing the level
+generator or gameplay numbers in `apps/game/src/sim/balance.ts`.
+
+### Dev helpers
+
+- Model viewer: `http://localhost:5173/?viewer` (add `&focus=<model>` to show a single model).
+- In the dev build the game is exposed as `window.lsg` for debugging.
+
 ## Repository layout
 
 ```
@@ -109,6 +138,7 @@ apps/game        Vite + Three.js game client
 apps/admin       Admin SPA (Preact), served under /admin
 apps/api         Fastify API, SQLite via node:sqlite
 packages/shared  Types and schemas shared by all apps
+tools/           Balancing bots and tuner, asset download, icon generator
 docker/          Dockerfiles, nginx config, entrypoint
 docs/            Concept and roadmap (German)
 ```

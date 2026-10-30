@@ -33,6 +33,19 @@ Abweichungen vom ursprünglichen Plan, mit Begründung. Wo dieser Abschnitt und 
 | 2026-10-30 | M4 | Erstes Admin-Konto: ohne `LSG_ADMIN_PASSWORD` zufälliges Passwort in `data/initial-admin-password.txt`, Wechsel beim ersten Login erzwungen | Stack startet ohne Vorarbeit und trotzdem ohne Standardpasswort |
 | 2026-10-30 | M4 | Sync-Regeln: erster Login importiert Gast-Fortschritt (Münzen addiert), danach optimistisches Locking mit Server-Revision; Konflikte werden ohne Fortschrittsverlust zusammengeführt | Kein Verlust bei Gerätewechsel oder parallelem Spielen |
 | 2026-10-30 | M4 | nginx reicht `Host` mit Port weiter (`$http_host`) | Sonst scheitert die Origin-Prüfung lokal auf `:8080` |
+| 2026-10-30 | M5 | **Prozedurale Modelle im Code** (`render/models/`, `ModelBuilder`) statt Blender-Skripten, Mixamo-Animationen und glTF-Pipeline | Frei verfügbare Charaktermodelle passen stilistisch selten zusammen; prozedurale Modelle halten die Art-Bible exakt ein, kosten keinen Download und brauchen kein Werkzeug außerhalb von Node |
+| 2026-10-30 | M5 | **Vertex-Shader-Animation pro Körperteil** statt Skelett-Skinning | Hunderte Soldaten als ein Instanced Mesh; Laufen, Rückstoß und Treffer-Blitz pro Instanz ohne CPU-Kosten |
+| 2026-10-30 | M5 | LOD-Stufen pro Gegnertyp im Code; Dreiecksbudget im Modell-Viewer (`?viewer` im Dev-Server) geprüft | Ersetzt die `gltf-transform`-LOD-Erzeugung |
+| 2026-10-30 | M6 | HDRIs und PBR-Texturen von **Poly Haven (CC0)** für Licht und Fahrbahn; Himmel, Gebäude und Kulissen prozedural | Einheitlicher Look, keine Lizenzpflichten, kleine Downloads (Welt-Medien werden erst beim Betreten geladen) |
+| 2026-10-30 | M6 | Post-Stack: Bloom, chromatische Aberration, ACES, Farbkorrektur nach dem Tone Mapping, Vignette; SMAA als eigener Pass. **Kein SSAO, kein DoF** | SSAO bringt bei der Kameraperspektive wenig und kostet auf Handys viel; Tilt-Shift-DoF verwischte die Truppe. Farbkorrektur vor dem Tone Mapping erzeugte schwarze Pixel (NaN) |
+| 2026-10-30 | M6 | **Automatische Qualitätsregelung** (`QualityGovernor`) zusätzlich zu den festen Stufen | Hält die Bildrate auf schwachen Geräten, ohne dass Spieler Einstellungen suchen müssen |
+| 2026-10-30 | M7 | **Soundeffekte und Musik werden zur Laufzeit synthetisiert** (`audio/sfx-synth.ts`, Step-Sequencer mit Stimmungen pro Welt) statt Kenney-/freesound-Bibliotheken | Keine Downloads, keine Lizenzpflichten, Mix und Lautheit aus einem Guss; Boss-Stimmung und Intensität folgen dem Spielgeschehen |
+| 2026-10-30 | M7 | PWA mit `vite-plugin-pwa`: App-Shell vorab gecacht, Welt-Medien beim ersten Laden; Service Worker nur im Produktions-Build | In der Entwicklung würden gecachte Module das Hot Reload stören |
+| 2026-10-30 | M8 | **Kalibrierung verlangt jetzt auch den Sieg des durchschnittlichen Bots**; erste Welle eines Levels ohne neuen Gegnertyp, Mindestgröße der Wellen wächst mit der Truppe | Level 6 war für durchschnittliche Spieler selbst mit allen Upgrades nicht schaffbar |
+| 2026-10-30 | M8 | Neue **Wirtschafts-Simulation** (`tools/balance/economy.ts`): Bots spielen die Kampagne der Reihe nach, kaufen Upgrades und wiederholen verlorene Level | Ergebnis: guter Bot 30 Versuche, durchschnittlicher 33, schwacher 32 für die ganze Kampagne; keine Grind-Wand |
+| 2026-10-30 | M8 | Combo-Zähler im HUD und beste Combo im Ergebnis; Zeitlupe am Levelende (auch beim Boss-Kill) | Juice-Feinschliff aus dem M8-Plan |
+| 2026-10-30 | M8 | `.gitignore`-Regel für `data/` auf den Projektstamm verankert | Die Regel blendete auch `apps/game/src/data/` aus; die Level-Daten wurden nachträglich committet |
+| 2026-10-30 | M8 | Playtest mit Personen, echte Gerätetests, Lighthouse und Offline-Test im echten Browser **nicht autonom durchführbar** | Siehe Abschnitt 7 „Offene Punkte nach 1.0“ |
 
 ## 0. Getroffene Entscheidungen (2026-10-30)
 
@@ -333,3 +346,16 @@ Diese Punkte habe ich festgelegt; sie lassen sich jederzeit ändern:
 - Docker läuft in der Debian-WSL (Docker Engine, kein Docker Desktop). Befehle vom Windows-Host: `wsl -d Debian --cd <projekt> -- docker compose ...`.
 - Statt Blender headless erzeugt die Asset-Pipeline Modelle bevorzugt per Node-Skript (Three.js-Geometrie + glTF-Transform); Blender bleibt optional im Tools-Container, falls ein Asset es braucht.
 - Rechtstexte (Datenschutz, Impressum) liefere ich als Vorlagen; die Inhalte musst du als Betreiber prüfen.
+
+## 7. Stand 1.0 und offene Punkte
+
+Alle Meilensteine M0 bis M8 sind umgesetzt und im lokalen Git-Repository (`master`, Tag `v1.0.0`) committet. `npm run check` (Lint, Typprüfung, Tests, Build) ist grün; die Bots gewinnen mit erwarteter Ausrüstung: gut 30/30, durchschnittlich 30/30, schwach 18/30.
+
+Diese Punkte brauchen Menschen oder echte Geräte und sind daher offen:
+- **Playtest** mit mehreren Personen, besonders Schwierigkeit ab Welt 2 und die Boss-Level 20 und 30.
+- **Gerätetests** auf echten Handys (iOS Safari: Audio-Freischaltung, Vollbild, Safe Areas; Android Chrome: Installation als App).
+- **Offline-Test der PWA** im normalen Browser: Im eingebetteten Testbrowser ließ sich kein Service Worker registrieren. Der erzeugte Service Worker und seine Cache-Liste wurden geprüft, das Verhalten im Flugmodus nicht.
+- **Lighthouse-Messung** im echten Browser.
+- **Google-Login** mit echten Zugangsdaten über den Admin-Assistenten einrichten und die Test-Anmeldung ausführen.
+- **Rechtstexte** (Impressum, Datenschutz) im Admin-Bereich prüfen und anpassen.
+- **Branding** (Name, Logo, Icons) ersetzt den Arbeitstitel LSG.
