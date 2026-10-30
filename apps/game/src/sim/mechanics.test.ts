@@ -32,6 +32,29 @@ describe('enemy mechanics', () => {
     expect(events.some((e) => e.type === 'unitsLost')).toBe(true);
   });
 
+  it('runners wound the squad instead of trading one for one', () => {
+    const sim = new Simulation(
+      level([{ type: 'wave', at: 40, groups: [{ kind: 'runner', count: 10, hpScale: 1000 }] }]),
+      units(40),
+    );
+    const events = run(sim, 8);
+    const lost = events.reduce((sum, e) => sum + (e.type === 'unitsLost' ? e.count : 0), 0);
+    expect(lost).toBeGreaterThan(0);
+    expect(lost).toBeLessThanOrEqual(4);
+  });
+
+  it('tiny squads fire faster per soldier than big ones', () => {
+    const shotsPerSoldier = (count: number) => {
+      const sim = new Simulation(
+        level([{ type: 'wave', at: 40, groups: [{ kind: 'tank', count: 1, hpScale: 1000 }] }]),
+        units(count),
+      );
+      const events = run(sim, 4);
+      return events.filter((e) => e.type === 'shot').length / count;
+    };
+    expect(shotsPerSoldier(3)).toBeGreaterThan(shotsPerSoldier(12) * 1.3);
+  });
+
   it('splitters break into runners when shot', () => {
     const sim = new Simulation(
       level([{ type: 'wave', at: 50, groups: [{ kind: 'splitter', count: 1 }] }]),

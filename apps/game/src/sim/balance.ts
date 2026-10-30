@@ -8,6 +8,8 @@ export const BALANCE = {
     visibleCap: 160,
     /** Maximum number of units that emit projectiles; damage is scaled up for the rest. */
     shooterCap: 48,
+    /** Extra shots a squad fires as if it had this many more soldiers; keeps tiny squads alive. */
+    rallyShooters: 3,
     maxUnits: 9999,
     baseDamage: 10,
     /** Shots per second per unit. */
@@ -122,8 +124,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     radius: 0.42,
     speed: 3,
     homing: 0.9,
-    crush: 1,
-    coins: 0.5,
+    crush: 0.4,
+    coins: 0.25,
     holdDistance: null,
     fireInterval: 0,
   },

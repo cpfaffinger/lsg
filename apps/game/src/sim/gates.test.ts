@@ -51,6 +51,12 @@ describe('gate passage', () => {
     expect(next.units).toBe(10);
   });
 
+  it('a bad gate never takes the last soldier', () => {
+    const gate = makeGate('units', -50);
+    const { next } = resolveGatePass({ ...base, units: 4 }, 0, [gate]);
+    expect(next.units).toBe(1);
+  });
+
   it('leaves soldiers untouched when nobody reaches a gate', () => {
     const { next, passes } = resolveGatePass({ ...base, units: 1 }, 0, [left, right]);
     expect(passes).toHaveLength(0);

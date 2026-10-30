@@ -46,6 +46,9 @@ Abweichungen vom ursprünglichen Plan, mit Begründung. Wo dieser Abschnitt und 
 | 2026-10-30 | M8 | Combo-Zähler im HUD und beste Combo im Ergebnis; Zeitlupe am Levelende (auch beim Boss-Kill) | Juice-Feinschliff aus dem M8-Plan |
 | 2026-10-30 | M8 | `.gitignore`-Regel für `data/` auf den Projektstamm verankert | Die Regel blendete auch `apps/game/src/data/` aus; die Level-Daten wurden nachträglich committet |
 | 2026-10-30 | Polish | **Animierte CC0-Figuren** (Quaternius) für Trupp, Läufer und Schützen; Animationen werden in eine Knochen-Textur gebacken und per GPU instanziert; ersetzt die prozeduralen Soldaten aus M5. Panzer, Splitter, Schildträger und Bosse bleiben prozedural | Spieltest: Grafik brauchte mehr Liebe; die Waffen sind jetzt sichtbar in der Hand |
+| 2026-10-30 | Polish | **Alle Gegner sind animierte CC0-Figuren**: Yeti (Panzer), Stachel-Blob (Splitter), Ork mit Energieschild (Schildträger), Blauer Dämon (Miniboss), Drache (Boss) | Die prozeduralen Modelle fielen neben den neuen Figuren auf |
+| 2026-10-30 | Balancing | **Weicher Gegnerkontakt und Sammelfeuer**: Ein Läufer verwundet nur (0,4 Soldaten pro Kontakt), jeder Trupp feuert wie mit drei Soldaten mehr, rote Tore nehmen nie den letzten Soldaten, das erste Tor bietet immer Soldaten | Vorher gab es nur "keine Verluste" oder "sofort ausgelöscht"; so entstehen echte Teilverluste |
+| 2026-10-30 | Balancing | **Tuner steuert auf eine Verlustquote**: Der Durchschnitts-Bot darf durch Gegner 25 % (Level 1) bis 55 % (Level 30) seiner Soldaten verlieren. Abwärtssuche statt Bisektion, Wandverluste zählen nicht, Finale behalten 15 % Reserve für den Bosskampf | Die alte Kurve hatte Ausreißer (Level 4, 6, 20) und Level 1 keinen Druck. Level 1 hat jetzt etwa doppelt so viele Gegner |
 | 2026-10-30 | Polish | **Horden ab Level 1**: Wellen wachsen mit der Truppe, Mindestgröße folgt der Schwierigkeit, kürzere Waffenreichweite; Tore wirken nur auf durchlaufende Soldaten; Truppe schießt nur bei Ziel; Level endet direkt nach dem letzten Hindernis | Spieltest: zu wenige Gegner, Leerlauf am Levelende, Dauerfeuer ins Leere |
 | 2026-10-30 | Polish | **Sichere Render-Stufe**: Test auf Float-Render-Targets, Erkennung von Kontextverlust, Shader-Fehlern und leeren Bildern, automatischer Rückfall; GPU-Daten in der Debug-Datei | Firefox auf Android zeigte nur das HUD; die Ursache auf dem Gerät ist noch nicht bestätigt |
 | 2026-10-30 | Polish | **Soundeffekte und Musik sind jetzt echte CC0-Aufnahmen** statt Synthese (Kenney, OpenGameArt), dazu vier umschaltbare Musikstile; ersetzt den M7-Eintrag zur Synthese | Die synthetisierten Klänge wirkten im Spieltest zu plastisch |
@@ -355,7 +358,7 @@ Diese Punkte habe ich festgelegt; sie lassen sich jederzeit ändern:
 
 ## 7. Stand 1.0 und offene Punkte
 
-Alle Meilensteine M0 bis M8 sind umgesetzt und im lokalen Git-Repository (`master`, Tag `v1.0.0`) committet. `npm run check` (Lint, Typprüfung, Tests, Build) ist grün; die Bots gewinnen mit erwarteter Ausrüstung: gut 30/30, durchschnittlich 30/30, schwach 18/30.
+Alle Meilensteine M0 bis M8 sind umgesetzt und im lokalen Git-Repository (`master`, Tag `v1.0.0`) committet. `npm run check` (Lint, Typprüfung, Tests, Build) ist grün; die Bots gewinnen mit erwarteter Ausrüstung: gut 30/30, durchschnittlich 30/30, schwach (Tore zufällig) 13/30; mit Shop-Upgrades schaffen alle drei die ganze Kampagne.
 
 Diese Punkte brauchen Menschen oder echte Geräte und sind daher offen:
 - **Playtest** mit mehreren Personen, besonders Schwierigkeit ab Welt 2 und die Boss-Level 20 und 30.

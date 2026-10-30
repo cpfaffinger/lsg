@@ -90,6 +90,7 @@ export class Simulation {
   private shotAccumulator = 0;
   private shooterCursor = 0;
   private coinBank = 0;
+  private crushBank = 0;
   /** Position of the last thing in the level; the run ends when it is dealt with. */
   private readonly endDistance: number;
   private readonly grid = new SpatialGrid(2);
@@ -203,7 +204,8 @@ export class Simulation {
     const shooters = Math.min(this.units, BALANCE.squad.shooterCap);
     // Units beyond the shooter cap still contribute damage through the scale factor.
     const damageScale = this.units / shooters;
-    this.shotAccumulator += shooters * this.fireRate * dt;
+    const volley = Math.min(this.units + BALANCE.squad.rallyShooters, BALANCE.squad.shooterCap);
+    this.shotAccumulator += volley * this.fireRate * dt;
     if (this.shotAccumulator >= 1) this.collectAimCandidates();
     const stride = shooterStride(shooters);
     while (this.shotAccumulator >= 1) {
@@ -589,7 +591,11 @@ export class Simulation {
         enemy.z - enemy.radius <= back &&
         this.squadContains(enemy.x, enemy.radius)
       ) {
-        this.loseUnits(enemy.crush, enemy.x, enemy.z, enemy.kind);
+        // Weak enemies only wound: a soldier falls once their contact damage adds up.
+        this.crushBank += enemy.crush;
+        const lost = Math.floor(this.crushBank);
+        this.crushBank -= lost;
+        if (lost > 0) this.loseUnits(lost, enemy.x, enemy.z, enemy.kind);
         this.killEnemy(enemy, true);
         continue;
       }

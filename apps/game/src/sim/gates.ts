@@ -136,7 +136,9 @@ export function resolveGatePass(target: GateTarget, squadX: number, gates: reado
     }
     passes.push({ gate, passed, result });
   });
-  next.units = Math.min(BALANCE.squad.maxUnits, remaining + passes.reduce((sum, p) => sum + p.result, 0));
+  const total = remaining + passes.reduce((sum, p) => sum + p.result, 0);
+  // A bad gate hurts, but only enemies end a run.
+  next.units = Math.min(BALANCE.squad.maxUnits, Math.max(Math.min(1, target.units), total));
   return { next, passes };
 }
 

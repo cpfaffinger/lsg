@@ -47,6 +47,8 @@ const INTRO = 34;
 /** Seconds of effective fire a wave is exposed to on its way to the squad. */
 const EXPOSURE = 4.2;
 const MAX_RUNNERS = 150;
+/** Last wave index that features the enemy kind a level introduces. */
+const SPOTLIGHT_BEATS = 2;
 /** Smallest crowd of a wave never grows beyond this, however large the squad gets. */
 const MAX_HORDE_FLOOR = 60;
 /** Runners keep at least this share of their base HP (half = one rifle shot). */
@@ -141,7 +143,8 @@ function chooseGates(rng: Rng, params: GeneratorParams, plan: Plan, beat: number
     const feature = weaponFeature(w);
     return feature !== null && f.has(feature);
   });
-  if (weapons.length > 0) {
+  // The first gate must offer soldiers on both sides: the first wave is sized for a grown squad.
+  if (weapons.length > 0 && beat > 0) {
     const spotlightWeapon =
       params.spotlight && weapons.includes(params.spotlight as WeaponId)
         ? (params.spotlight as WeaponId)
@@ -187,7 +190,8 @@ function buildWave(rng: Rng, params: GeneratorParams, budget: number, plan: Plan
   let remaining = budget;
   for (const special of specials) {
     if (!f.has(special.feature)) continue;
-    const spotlight = params.spotlight === special.feature;
+    // A new kind leads the first waves of its level; after that it mixes in like any other.
+    const spotlight = params.spotlight === special.feature && beat <= SPOTLIGHT_BEATS;
     // The first wave of a level never introduces a kind: the squad is still tiny there.
     if (beat === 0 && !(spotlight && plan.units >= 6)) continue;
     if (!spotlight && !rng.chance(0.45)) continue;

@@ -3,7 +3,8 @@
  *
  * Phase 1: for every level, binary-search the highest wave difficulty at which three competent
  * bot variants all win while keeping a target share of their squad, and an average bot (who
- * commits to gates early and ignores gate shooting) still wins too.
+ * commits to gates early and ignores gate shooting) wins without losing more than a target share
+ * of its soldiers. That share rises level by level and is what makes the campaign feel harder.
  * Phase 2: for boss and mini-boss levels, search the boss HP so the fight lasts about a target
  * duration while all variants still win.
  *
@@ -26,12 +27,20 @@ const argNumber = (name: string, fallback: number) => {
 const from = argNumber('from', 1);
 const to = argNumber('to', CAMPAIGN_LENGTH);
 
+/** Wave strength of boss and mini-boss levels relative to what the waves alone would allow. */
+const FINALE_WAVE_SHARE = 0.85;
+
 /** Three competent players with different reaction distances; all of them must pass. */
 const VARIANTS = [12, 18, 26];
 
 /** Share of the peak squad a competent player should still have at the end. Lower = harder. */
 function targetSurvival(level: number): number {
   return 0.7 - ((level - 1) / (CAMPAIGN_LENGTH - 1)) * 0.35;
+}
+
+/** Share of all its soldiers the average bot may lose in a level. Higher = harder. */
+function targetLossShare(level: number): number {
+  return 0.25 + ((level - 1) / (CAMPAIGN_LENGTH - 1)) * 0.3;
 }
 
 /** Seconds from boss spawn (including its approach) to its defeat. */
@@ -59,26 +68,33 @@ function averageWins(level: number, difficulty: number, bossHp?: number): boolea
   return playLevel(campaignLevel(level, difficulty, bossHp), modifiersFor(level), 'average').status === 'won';
 }
 
-function tuneDifficulty(level: number, bossHp: number | undefined): number {
+/** Share of its soldiers the average bot loses to enemies; a lost level counts as everything. */
+function averageLossShare(level: number, difficulty: number, bossHp?: number): number {
+  const run = playLevel(campaignLevel(level, difficulty, bossHp), modifiersFor(level), 'average');
+  if (run.status !== 'won') return 1;
+  // Walls take a fixed slice of a wide squad at any difficulty, so they say nothing about waves.
+  const lost = Object.entries(run.losses).reduce((sum, [cause, n]) => sum + (cause === 'barrier' ? 0 : n), 0);
+  return lost / Math.max(1, lost + run.units);
+}
+
+function tuneDifficulty(level: number, bossHp: number | undefined, share = 1): number {
   const good = (d: number) => evaluate(level, d, bossHp).survival >= targetSurvival(level);
-  let lo = 0.03;
-  // Early levels stay gentle even when competent bots could take more: newcomers play them.
-  let hi = Math.min(1.2, 0.3 + level * 0.018);
-  const requireAverage = averageWins(level, lo, bossHp);
-  if (!requireAverage) console.warn(`level ${level}: average bot cannot win even at difficulty ${lo}`);
-  const passes = (d: number) => good(d) && (!requireAverage || averageWins(level, d, bossHp));
-  if (!passes(lo)) console.warn(`level ${level}: not winnable even at difficulty ${lo}`);
-  for (let i = 0; i < 10; i++) {
-    const mid = (lo + hi) / 2;
-    if (passes(mid)) lo = mid;
-    else hi = mid;
+  const lo = 0.03;
+  const hi = 1.2;
+  // More waves mean more shots at gates, so a slightly harder level can be easier to win.
+  const requireAverage = [lo, 0.1, 0.2, 0.3].some((d) => averageWins(level, d, bossHp));
+  if (!requireAverage) console.warn(`level ${level}: average bot cannot win`);
+  const passes = (d: number) =>
+    good(d) && (!requireAverage || averageLossShare(level, d, bossHp) <= targetLossShare(level));
+  // Outcomes are not monotonic, so a bisection can fall into a pocket: walk down from the top
+  // and take the first value that passes together with a margin below it.
+  for (let d = hi; d >= lo; d -= 0.02) {
+    const value = Number(d.toFixed(3));
+    const final = Number((value * share).toFixed(3));
+    if (passes(value) && passes(value * 0.92) && passes(final)) return final;
   }
-  // Outcomes are not perfectly monotonic: step down until the value and a margin below pass.
-  for (const factor of [0.92, 0.85, 0.78, 0.7, 0.6, 0.5, 0.4, 0.3]) {
-    const value = Number((lo * factor).toFixed(3));
-    if (passes(value) && passes(value * 0.9)) return value;
-  }
-  return Number((lo * 0.3).toFixed(3));
+  console.warn(`level ${level}: not winnable even at difficulty ${lo}`);
+  return lo;
 }
 
 function tuneBoss(level: number, difficulty: number): number {
@@ -108,14 +124,10 @@ const difficulty = [...CAMPAIGN_DIFFICULTY];
 const bossHp: Record<number, number> = { ...CAMPAIGN_BOSS_HP };
 for (let level = from; level <= to; level++) {
   const isFinale = level % 10 === 0 || level % 10 === 5;
-  // Waves first against a weak provisional boss (independent of earlier tuning runs), then the
-  // boss, then waves again with that boss, then the boss once more for the final wave strength.
-  let d = tuneDifficulty(level, isFinale ? 1 : undefined);
-  if (isFinale) {
-    bossHp[level] = tuneBoss(level, d);
-    d = tuneDifficulty(level, bossHp[level]);
-    bossHp[level] = tuneBoss(level, d);
-  }
+  // Waves first against a weak provisional boss, independent of earlier tuning runs. Finales then
+  // keep some slack in the waves: the fight is the point of the level, not what comes before it.
+  const d = tuneDifficulty(level, isFinale ? 1 : undefined, isFinale ? FINALE_WAVE_SHARE : 1);
+  if (isFinale) bossHp[level] = tuneBoss(level, d);
   difficulty[level - 1] = d;
   const check = evaluate(level, d, isFinale ? bossHp[level] : undefined);
   console.info(
