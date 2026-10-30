@@ -564,7 +564,6 @@ export class Game {
     this.effects.handle(this.frameEvents, squadX);
     this.audioDirector.handle(this.frameEvents);
     this.frameEvents.length = 0;
-    this.audio.setIntensity(this.sim.units / 150);
     this.effects.trails(this.sim, frameDt * this.loop.timeScale);
     this.effects.update(frameDt * this.loop.timeScale, Math.max(0, scrollDz));
     this.renderer.rig.followX = squadX * 0.25;

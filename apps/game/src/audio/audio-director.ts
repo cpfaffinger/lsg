@@ -1,8 +1,14 @@
 import { isGateBeneficial } from '../sim/gates.ts';
 import type { SimEvent, WeaponId } from '../sim/types.ts';
 import type { AudioManager } from './audio-manager.ts';
+import type { SfxId } from './sfx-bank.ts';
 
-const SHOT_PITCH: Record<WeaponId, number> = { rifle: 1, spread: 0.8, laser: 1.7, rocket: 0.55 };
+const SHOT_SOUND: Record<WeaponId, { id: SfxId; volume: number }> = {
+  rifle: { id: 'shot', volume: 0.2 },
+  spread: { id: 'shotSpread', volume: 0.24 },
+  laser: { id: 'shotLaser', volume: 0.22 },
+  rocket: { id: 'shotRocket', volume: 0.4 },
+};
 
 /** Maps simulation events to sound effects. */
 export class AudioDirector {
@@ -17,7 +23,10 @@ export class AudioDirector {
     for (const event of events) {
       switch (event.type) {
         case 'shot':
-          this.audio.play('shot', { volume: 0.22, rate: SHOT_PITCH[event.weapon], jitter: 0.08 });
+          this.audio.play(SHOT_SOUND[event.weapon].id, {
+            volume: SHOT_SOUND[event.weapon].volume,
+            jitter: 0.06,
+          });
           break;
         case 'enemyHit':
           this.audio.play('hit', { volume: 0.22, jitter: 0.15 });

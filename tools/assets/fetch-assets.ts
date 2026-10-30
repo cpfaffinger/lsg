@@ -38,6 +38,46 @@ const ASSETS: AssetRequest[] = [
 ];
 
 const OUT = path.resolve('apps/game/src/media');
+
+/** Audio assets, converted by tools/assets/convert-audio.sh. */
+const AUDIO_CREDITS = [
+  {
+    name: 'Sci-Fi Sounds, Impact Sounds, Interface Sounds, Music Jingles',
+    authors: ['Kenney'],
+    usedFor: 'sound effects',
+    source: 'https://kenney.nl/assets/category:Audio',
+  },
+  {
+    name: 'Determined Pursuit',
+    authors: ['Emma_MA'],
+    usedFor: 'menu music',
+    source: 'https://opengameart.org/content/determined-pursuit-epic-orchestra-loop',
+  },
+  {
+    name: 'Action Music Loop',
+    authors: ['AppPro'],
+    usedFor: 'Dust Valley music',
+    source: 'https://opengameart.org/content/action-music-loop',
+  },
+  {
+    name: 'Fast fight / battle music',
+    authors: ['Ville Nousiainen', 'Xythe', 'mutkanto'],
+    usedFor: 'Neon City music',
+    source: 'https://opengameart.org/content/fast-fight-battle-music',
+  },
+  {
+    name: 'Friendly Talk On a Robotic Battlefield',
+    authors: ['illin'],
+    usedFor: 'Orbit Station music',
+    source: 'https://opengameart.org/content/friendly-talk-on-a-robotic-battlefield-looped',
+  },
+  {
+    name: 'Heavy battle music',
+    authors: ['Davieplier'],
+    usedFor: 'boss music',
+    source: 'https://opengameart.org/content/heavy-battle-music',
+  },
+];
 const RESOLUTION = '1k';
 
 async function json(url: string): Promise<Record<string, unknown>> {
@@ -95,5 +135,8 @@ for (const asset of ASSETS) {
   console.info(`${asset.id}: ${written.join(', ')}`);
 }
 
-fs.writeFileSync(path.join(OUT, 'credits.json'), `${JSON.stringify(credits, null, 2)}\n`);
+fs.writeFileSync(
+  path.join(OUT, 'credits.json'),
+  `${JSON.stringify([...credits, ...AUDIO_CREDITS], null, 2)}\n`,
+);
 console.info(`wrote ${path.join(OUT, 'credits.json')}`);

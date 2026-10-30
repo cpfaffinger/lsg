@@ -1,6 +1,6 @@
 import type { WorldId } from '../sim/level.ts';
-import { MusicSequencer, type MusicMood } from './music.ts';
-import { buildSfx, type SfxId } from './sfx-synth.ts';
+import { MusicPlayer, type MusicMood } from './music-player.ts';
+import { loadSfx, type SfxBank, type SfxId } from './sfx-bank.ts';
 
 interface PlayOptions {
   volume?: number;
@@ -12,7 +12,11 @@ interface PlayOptions {
 
 /** Per-sound limits so rapid-fire events (hundreds of shots per second) stay pleasant. */
 const LIMITS: Partial<Record<SfxId, { minInterval: number; maxVoices: number }>> = {
-  shot: { minInterval: 0.045, maxVoices: 6 },
+  shot: { minInterval: 0.05, maxVoices: 5 },
+  shotSpread: { minInterval: 0.07, maxVoices: 4 },
+  shotLaser: { minInterval: 0.07, maxVoices: 4 },
+  shotRocket: { minInterval: 0.12, maxVoices: 4 },
+  explosion: { minInterval: 0.1, maxVoices: 4 },
   hit: { minInterval: 0.03, maxVoices: 6 },
   kill: { minInterval: 0.035, maxVoices: 6 },
   gateHit: { minInterval: 0.05, maxVoices: 3 },
@@ -30,8 +34,8 @@ export class AudioManager {
   private master: GainNode | null = null;
   private sfxBus: GainNode | null = null;
   private musicBus: GainNode | null = null;
-  private buffers: Record<SfxId, AudioBuffer> | null = null;
-  private music: MusicSequencer | null = null;
+  private buffers: SfxBank | null = null;
+  private music: MusicPlayer | null = null;
   private readonly lastPlayed = new Map<SfxId, number>();
   private readonly voices = new Map<SfxId, number>();
   private volumes = { master: 0.8, sfx: 0.8, music: 0.6, muted: false };
@@ -66,11 +70,11 @@ export class AudioManager {
     this.musicBus = ctx.createGain();
     this.musicBus.connect(this.master);
     this.applyVolumes();
-    this.buffers = buildSfx(ctx);
-    this.music = new MusicSequencer(ctx, this.musicBus);
-    this.music.setMood(this.mood);
-    this.music.setWorld(this.worldId);
-    this.music.start();
+    void loadSfx(ctx).then((bank) => {
+      this.buffers = bank;
+    });
+    this.music = new MusicPlayer(ctx, this.musicBus);
+    this.music.setMood(this.mood, this.worldId);
   }
 
   setVolumes(master: number, sfx: number, music: number, muted: boolean): void {
@@ -99,21 +103,20 @@ export class AudioManager {
 
   setWorld(world: WorldId): void {
     this.worldId = world;
-    this.music?.setWorld(world);
+    this.music?.setMood(this.mood, world);
   }
 
   setMood(mood: MusicMood): void {
     this.mood = mood;
-    this.music?.setMood(mood);
-  }
-
-  setIntensity(value: number): void {
-    if (this.music) this.music.intensity = Math.max(0, Math.min(1, value));
+    this.music?.setMood(mood, this.worldId);
   }
 
   play(id: SfxId, options: PlayOptions = {}): void {
     const ctx = this.ctx;
     if (!ctx || !this.buffers || !this.sfxBus || this.volumes.muted || ctx.state !== 'running') return;
+    const variations = this.buffers[id];
+    const buffer = variations?.[Math.floor(Math.random() * variations.length)];
+    if (!buffer) return;
     const limit = LIMITS[id];
     const now = ctx.currentTime;
     if (limit) {
@@ -123,7 +126,7 @@ export class AudioManager {
     }
     this.lastPlayed.set(id, now);
     const source = ctx.createBufferSource();
-    source.buffer = this.buffers[id];
+    source.buffer = buffer;
     const jitter = options.jitter ?? 0.05;
     source.playbackRate.value = (options.rate ?? 1) * (1 + (Math.random() * 2 - 1) * jitter);
     const gain = ctx.createGain();

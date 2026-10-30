@@ -53,7 +53,8 @@ export default defineConfig({
       },
       workbox: {
         // App shell and code are precached; large world media are cached on first use.
-        globPatterns: ['**/*.{js,css,html,png,json,webmanifest}'],
+        // Sound effects are small and belong to offline play; music and textures load on demand.
+        globPatterns: ['**/*.{js,css,html,png,json,webmanifest,wav}'],
         globIgnores: ['version.json'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/admin/],

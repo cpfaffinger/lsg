@@ -30,3 +30,16 @@ keine Namensnennung erforderlich). Sie werden unverändert in 1k-Auflösung verw
 | Blue Metal Plate | PBR-Textur | Rob Tuytel | https://polyhaven.com/a/blue_metal_plate | Fahrbahn „Orbit Station“ | `media/textures/blue_metal_plate/*` |
 
 Die Autorennamen stammen aus der Poly-Haven-API (`credits.json`); bei Abweichungen gilt `credits.json`.
+
+## Audio (CC0)
+
+Alle Dateien liegen konvertiert in `apps/game/src/media/audio/`. `tools/assets/convert-audio.sh` erzeugt sie aus den Downloads in `assets-src/downloads/`.
+
+| Asset | Urheber | Verwendung | Quelle | Lizenz |
+|-------|---------|------------|--------|--------|
+| Sci-Fi Sounds, Impact Sounds, Interface Sounds, Music Jingles | Kenney | Soundeffekte | https://kenney.nl/assets/category:Audio | CC0 |
+| Determined Pursuit | Emma_MA | Musik Menü | https://opengameart.org/content/determined-pursuit-epic-orchestra-loop | CC0 |
+| Action Music Loop | AppPro | Musik Dust Valley | https://opengameart.org/content/action-music-loop | CC0 |
+| Fast fight / battle music | Ville Nousiainen, Xythe, mutkanto | Musik Neon City | https://opengameart.org/content/fast-fight-battle-music | CC0 |
+| Friendly Talk On a Robotic Battlefield | illin | Musik Orbit Station | https://opengameart.org/content/friendly-talk-on-a-robotic-battlefield-looped | CC0 |
+| Heavy battle music | Davieplier | Musik Boss | https://opengameart.org/content/heavy-battle-music | CC0 |
