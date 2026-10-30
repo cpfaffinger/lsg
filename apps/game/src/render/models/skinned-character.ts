@@ -230,7 +230,7 @@ export function createSkinnedMaterials(id: CharacterId, teamHex = 0xffffff): Ski
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
         float lsgRim = pow(1.0 - saturate(dot(normal, normalize(vViewPosition))), 3.0);
-        totalEmissiveRadiance += diffuseColor.rgb * (vSurface.z * 2.0 + lsgRim * 0.8) + vec3(vFlash);`,
+        totalEmissiveRadiance += diffuseColor.rgb * (vSurface.z * 2.0 + lsgRim * 0.45) + vec3(vFlash);`,
       );
   };
   material.customProgramCacheKey = () => `lsg-skinned-${id}`;

@@ -27,6 +27,8 @@ interface CharacterConfig {
   teamRigid: Record<string, number>;
   /** Share of triangles kept for the detailed and the distant model. */
   lods: [number, number];
+  /** Merges the distant model regardless of its topology, up to this shape error. */
+  farError?: number;
 }
 
 const CHARACTERS: CharacterConfig[] = [
@@ -36,7 +38,8 @@ const CHARACTERS: CharacterConfig[] = [
     attachments: ['AK', 'Shotgun', 'Sniper_2', 'RocketLauncher'],
     team: { Character_Main: 0.85, Pants: 0.28 },
     teamRigid: { Black: 0.6, Character_Main: 0.85 },
-    lods: [0.34, 0.1],
+    lods: [0.34, 0.2],
+    farError: 0.6,
   },
   {
     id: 'enemy',
@@ -276,9 +279,11 @@ async function bake(config: CharacterConfig): Promise<void> {
       const target = Math.max(MIN_TRIANGLES * 3, Math.floor((source.length * ratio) / 3) * 3);
       // Distant models may lose small parts completely; nobody sees them at that size.
       const options = lod === 0 ? (['LockBorder'] as const) : ([] as const);
-      const [result] = MeshoptSimplifier.simplify(source, positions, 3, target, lod === 0 ? 0.05 : 0.2, [
-        ...options,
-      ]);
+      const error = lod === 0 ? 0.05 : (config.farError ?? 0.2);
+      const [result] =
+        lod === 1 && config.farError
+          ? MeshoptSimplifier.simplifySloppy(source, positions, 3, null, target, error)
+          : MeshoptSimplifier.simplify(source, positions, 3, target, error, [...options]);
       for (const index of result) lodIndices[lod]?.push(index + offset);
     });
   }

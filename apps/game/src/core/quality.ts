@@ -7,6 +7,8 @@ export interface QualitySettings {
   maxPixelRatio: number;
   shadows: boolean;
   shadowMapSize: number;
+  /** Small enemies cast shadows too; expensive with hundreds of them. */
+  crowdShadows: boolean;
   antialias: boolean;
   postProcessing: boolean;
   bloom: boolean;
@@ -25,6 +27,7 @@ export const QUALITY_PRESETS: Record<QualityLevel, QualitySettings> = {
     maxPixelRatio: 1,
     shadows: false,
     shadowMapSize: 512,
+    crowdShadows: false,
     antialias: false,
     postProcessing: false,
     bloom: false,
@@ -39,6 +42,7 @@ export const QUALITY_PRESETS: Record<QualityLevel, QualitySettings> = {
     maxPixelRatio: 1.5,
     shadows: true,
     shadowMapSize: 1024,
+    crowdShadows: false,
     antialias: false,
     postProcessing: true,
     bloom: true,
@@ -53,6 +57,7 @@ export const QUALITY_PRESETS: Record<QualityLevel, QualitySettings> = {
     maxPixelRatio: 2,
     shadows: true,
     shadowMapSize: 2048,
+    crowdShadows: true,
     antialias: true,
     postProcessing: true,
     bloom: true,
@@ -67,6 +72,7 @@ export const QUALITY_PRESETS: Record<QualityLevel, QualitySettings> = {
     maxPixelRatio: 2.5,
     shadows: true,
     shadowMapSize: 4096,
+    crowdShadows: true,
     antialias: true,
     postProcessing: true,
     bloom: true,

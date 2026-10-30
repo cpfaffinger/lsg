@@ -56,6 +56,7 @@ Abweichungen vom ursprünglichen Plan, mit Begründung. Wo dieser Abschnitt und 
 | 2026-10-30 | Betrieb | Deployment auf den eigenen Server unter https://lsg.gleesh.net; Host-Port per `LSG_HTTP_BIND` nur lokal gebunden, öffentliche Adresse vorerst über `LSG_PUBLIC_URL` | Der Server hat bereits einen zentralen nginx; Details in `docs/DEPLOY.md`. Der Wert im Admin-Bereich hat Vorrang vor `LSG_PUBLIC_URL` |
 | 2026-10-30 | M8 | Playtest mit Personen, echte Gerätetests, Lighthouse und Offline-Test im echten Browser **nicht autonom durchführbar** | Siehe Abschnitt 7 „Offene Punkte nach 1.0“ |
 | 2026-10-30 | Polish | **Horden bleiben breit** statt zu einer Reihe zusammenzulaufen; **erwartete Stärke** im Tuner an die echten Upgrades angepasst (1 + 0,08 je Level statt 0,045) | Die Zielsuche zog alle Läufer auf eine Linie, und gekaufte Upgrades lagen doppelt so hoch wie angenommen |
+| 2026-10-30 | Polish | **Dünen** neben der Wüstenstrecke; Soldaten-Fernmodell mit grober Vereinfachung (1.820 statt 2.590 Dreiecke); Gegner-Massen nutzen ab 50 Figuren früher das Fernmodell, kleine Gegner werfen auf „niedrig“ und „mittel“ keine Schatten mehr | Mit den neuen Horden lagen im Extremfall fast zwei Millionen Dreiecke pro Bild an; das ist für Handys zu viel |
 
 ## 0. Getroffene Entscheidungen (2026-10-30)
 

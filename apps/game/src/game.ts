@@ -176,6 +176,7 @@ export class Game {
     this.effects.applyQuality(quality);
     this.world.squad.setDetail(level === 'low' ? 0 : 1);
     this.world.enemies.lodBias = quality.lodBias;
+    this.world.enemies.setCrowdShadows(quality.crowdShadows);
   }
 
   private applySettings(): void {
@@ -195,6 +196,7 @@ export class Game {
     }
     this.world.squad.setDetail(quality.level === 'low' ? 0 : 1);
     this.world.enemies.lodBias = quality.lodBias;
+    this.world.enemies.setCrowdShadows(quality.crowdShadows);
     if (s.locale && s.locale !== getLocale()) void setLocale(s.locale);
   }
 

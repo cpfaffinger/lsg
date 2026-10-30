@@ -3,6 +3,7 @@ import {
   BufferAttribute,
   Group,
   Mesh,
+  PlaneGeometry,
   Vector3,
   type BufferGeometry,
   type Material,
@@ -41,7 +42,31 @@ function sideX(rng: Rng, min: number, max: number): number {
 
 // ------------------------------------------------------------------ desert
 
+/** Rolling sand beside the lane. Whole wave numbers along z let the strip tile without a seam. */
+function dunes(side: 1 | -1): BufferGeometry {
+  const start = EDGE + 8;
+  const width = 70;
+  const geometry = new PlaneGeometry(width, STRIP_LENGTH, 32, 64)
+    .rotateX(-Math.PI / 2)
+    .translate(side * (start + width / 2), 0, -STRIP_LENGTH / 2);
+  const position = geometry.getAttribute('position') as BufferAttribute;
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i);
+    const turn = (position.getZ(i) / STRIP_LENGTH) * Math.PI * 2;
+    const rise = Math.min(1, (Math.abs(x) - start) / 16);
+    const height =
+      2.2 * (1 + Math.sin(3 * turn + x * 0.09)) +
+      1.1 * (1 + Math.sin(7 * turn - x * 0.17 + 1)) +
+      0.45 * (1 + Math.sin(13 * turn + x * 0.31 + 2));
+    position.setY(i, height * rise * rise * (3 - 2 * rise) - 0.03);
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function desertStrip(rng: Rng, b: Builder): void {
+  b.add(dunes(1), { color: 0xc99a68, roughness: 1 });
+  b.add(dunes(-1), { color: 0xc99a68, roughness: 1 });
   const sandstone = [0xb8743f, 0xc98a52, 0xa8653a, 0xd39b62];
   for (let z = 0; z < STRIP_LENGTH; z += rng.range(2.2, 4.8)) {
     const x = sideX(rng, 0.5, 7);

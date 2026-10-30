@@ -50,6 +50,9 @@ interface FallingEnemy {
 
 /** Enemies further away than this (along -z) use the low-detail model. */
 const LOD_DISTANCE = 42;
+/** In a crowd of this size only the front ranks keep the detailed model. */
+const CROWD_SIZE = 50;
+const CROWD_LOD_DISTANCE = 16;
 
 interface KindMeshes {
   near: InstancedMesh;
@@ -60,6 +63,8 @@ interface KindMeshes {
   farParams: InstancedBufferAttribute;
   nearCount: number;
   farCount: number;
+  /** Where the low-detail model starts; closer when this kind forms a crowd. */
+  lodZ: number;
 }
 
 /** Instanced, skeletally animated enemies with two levels of detail per kind. */
@@ -77,6 +82,7 @@ export class EnemyView {
   private lastDistance = 0;
   /** Scales the LOD switch distance (quality setting). */
   lodBias = 1;
+  private castsCrowdShadows = true;
 
   constructor(scene: Scene) {
     const plateMaterials = createAnimatedMaterials(STILL);
@@ -91,7 +97,7 @@ export class EnemyView {
         const mesh = new InstancedMesh(geometry, materials.material, capacity);
         mesh.customDepthMaterial = materials.depth;
         mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-        mesh.castShadow = detail === 1;
+        mesh.castShadow = detail === 1 && (BIG_KINDS.has(kind) || this.castsCrowdShadows);
         mesh.frustumCulled = false;
         mesh.count = 0;
         scene.add(mesh);
@@ -122,6 +128,7 @@ export class EnemyView {
         farParams: far.params,
         nearCount: 0,
         farCount: 0,
+        lodZ: -LOD_DISTANCE,
       });
     }
   }
@@ -179,19 +186,29 @@ export class EnemyView {
     }
   }
 
+  /** Shadows of the small enemies cost as much as the enemies; weak devices go without. */
+  setCrowdShadows(enabled: boolean): void {
+    if (enabled === this.castsCrowdShadows) return;
+    this.castsCrowdShadows = enabled;
+    for (const [kind, entry] of this.kinds) {
+      if (!BIG_KINDS.has(kind)) entry.near.castShadow = enabled;
+    }
+  }
+
   update(sim: Simulation, alpha: number, frameDt: number): void {
+    const lodZ = -LOD_DISTANCE * this.lodBias;
     for (const entry of this.kinds.values()) {
+      entry.lodZ = entry.nearCount + entry.farCount > CROWD_SIZE ? -CROWD_LOD_DISTANCE : lodZ;
       entry.nearCount = 0;
       entry.farCount = 0;
     }
-    const lodZ = -LOD_DISTANCE * this.lodBias;
     for (const enemy of sim.enemies) {
       if (!enemy.alive) continue;
       const entry = this.kinds.get(enemy.kind);
       if (!entry) continue;
       const x = enemy.prevX + (enemy.x - enemy.prevX) * alpha;
       const z = enemy.prevZ + (enemy.z - enemy.prevZ) * alpha;
-      const isFar = z < lodZ && enemy.kind !== 'boss' && enemy.kind !== 'miniboss';
+      const isFar = z < entry.lodZ && enemy.kind !== 'boss' && enemy.kind !== 'miniboss';
       const index = isFar ? entry.farCount : entry.nearCount;
       if (index >= CAPACITY[enemy.kind]) continue;
       const mesh = isFar ? entry.far : entry.near;
