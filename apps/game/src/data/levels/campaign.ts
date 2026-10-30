@@ -34,7 +34,7 @@ export function expectedLoadout(levelNumber: number): { startUnits: number; powe
   const progress = levelNumber - 1;
   return {
     startUnits: 3 + Math.floor(progress / 3),
-    power: 1 + progress * 0.045,
+    power: 1 + progress * 0.08,
   };
 }
 

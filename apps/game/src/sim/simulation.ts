@@ -32,6 +32,10 @@ export interface StepInput {
 const MAX_PROJECTILES = 1400;
 /** Largest wave a horde can grow to; also the limit of what stays readable on screen. */
 const MAX_HORDE = 220;
+/** A crowd spreads this far beyond the squad on its way in. */
+const CROWD_MARGIN = 3;
+/** Distance ahead of the squad at which a crowd closes in. */
+const CLOSE_IN_DISTANCE = 12;
 const ENEMY_PROJECTILE_SPEED = 17;
 const SQUAD_FRONT_Z = SQUAD_Z - 0.45;
 /** Enemies closer than this are auto-targeted; farther away the squad shoots straight. */
@@ -559,6 +563,7 @@ export class Simulation {
   private updateEnemies(dt: number, scrollDelta: number): void {
     const front = SQUAD_FRONT_Z;
     const back = SQUAD_Z + squadDepth(this.units);
+    const reach = squadHalfWidth(this.units);
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue;
       enemy.prevX = enemy.x;
@@ -574,7 +579,13 @@ export class Simulation {
         } else {
           enemy.z += scrollDelta + enemy.speed * dt;
         }
-        enemy.x += clamp(this.squadX - enemy.x, -1, 1) * enemy.homing * dt * 3;
+        // A crowd keeps its width on the way in and closes onto the squad's front at the end,
+        // so it reads as a horde instead of a queue.
+        const offset = enemy.x - this.squadX;
+        const band = enemy.z < front - CLOSE_IN_DISTANCE ? reach + CROWD_MARGIN : reach * 0.8;
+        // Everyone stops at a slightly different distance; a shared edge would stack them.
+        const edge = band * (0.6 + (enemy.seed % 1) * 0.4);
+        enemy.x += clamp(clamp(offset, -edge, edge) - offset, -1, 1) * enemy.homing * dt * 3;
         enemy.x = clamp(enemy.x, -LANE_HALF_WIDTH + enemy.radius, LANE_HALF_WIDTH - enemy.radius);
         if (ENEMIES[enemy.kind].fireInterval > 0 && enemy.z > -SPAWN_DISTANCE * 0.7) {
           enemy.fireCooldown -= dt;

@@ -31,6 +31,7 @@ import { EffectsDirector } from './render/fx/effects-director.ts';
 import { SceneRenderer } from './render/scene-renderer.ts';
 import { WorldView } from './render/world-view.ts';
 import { squadDepth } from './sim/formation.ts';
+import { isGateBeneficial } from './sim/gates.ts';
 import type { LevelDef } from './sim/level.ts';
 import { Simulation } from './sim/simulation.ts';
 import { DEFAULT_MODIFIERS, type RunModifiers, type SimEvent } from './sim/types.ts';
@@ -41,6 +42,11 @@ import { Screens, type LevelTile, type MenuModel, type ShopTab } from './ui/scre
 type RunMode =
   { kind: 'campaign'; level: number } | { kind: 'endless' } | { kind: 'custom'; level: LevelDef };
 type MenuPage = 'main' | 'levels' | 'shop' | 'settings';
+
+/** Real time between the end of a level and the result screen. */
+const LEVEL_END_MS = 900;
+/** Long enough for the chain of explosions on a dying boss. */
+const BOSS_FINALE_MS = 2800;
 
 /** Top-level game controller: owns the loop, the current run, progress and all UI layers. */
 export class Game {
@@ -63,6 +69,9 @@ export class Game {
   private recorder: ReplayRecorder | null = null;
   private framePerf = { frames: 0, seconds: 0, slow: 0 };
   private resultShown = false;
+  /** Real seconds of slow motion left. */
+  private slowSeconds = 0;
+  private bossFinale = false;
   private restartRequested = false;
   /** Simulation events collected during this frame's steps, consumed by effects and audio. */
   private readonly frameEvents: SimEvent[] = [];
@@ -264,6 +273,8 @@ export class Game {
     this.effects.setWorld(level.world);
     this.audio.setWorld(level.world);
     this.resultShown = false;
+    this.bossFinale = false;
+    this.slowSeconds = 0;
     this.lastDistance = 0;
     this.frameEvents.length = 0;
     this.effects.clear();
@@ -527,30 +538,57 @@ export class Game {
     navigator.vibrate(ms);
   }
 
+  /** Stretches a big moment. Never overrides the pause or the end of a level. */
+  private slowMotion(seconds: number, scale: number): void {
+    if (this.loop.timeScale !== 1 && this.slowSeconds <= 0) return;
+    this.loop.timeScale = scale;
+    this.slowSeconds = seconds;
+  }
+
   private handleEvents(events: SimEvent[]): void {
     for (const event of events) {
       this.frameEvents.push(event);
       switch (event.type) {
         case 'unitsLost':
           this.vibrate(12);
+          if (event.count >= 3) this.hud.flash('bad');
           break;
         case 'gatePassed':
           this.vibrate(25);
+          if (event.op === 'weapon') {
+            this.hud.flash('weapon');
+            if (event.weapon) this.hud.announce(t(`weapon.${event.weapon}`), 'weapon');
+          } else {
+            this.hud.flash(isGateBeneficial(event.op, event.value) ? 'good' : 'bad');
+          }
           break;
         case 'bossSpawned':
           if (event.kind === 'boss') this.audio.setMood('boss');
           this.vibrate(60);
+          this.hud.announce(t(event.kind === 'boss' ? 'hud.boss' : 'hud.miniboss'), 'boss');
+          this.slowMotion(0.6, 0.45);
+          break;
+        case 'bossPhase':
+          this.hud.flash('bad');
+          this.slowMotion(0.35, 0.4);
+          break;
+        case 'enemyKilled':
+          if (event.kind === 'miniboss') this.slowMotion(0.5, 0.3);
+          if (event.kind === 'boss') this.bossFinale = true;
           break;
         case 'levelComplete':
         case 'levelFailed':
           // Let the final moment play out in slow motion before the result screen.
           this.loop.timeScale = 0.35;
-          window.setTimeout(() => {
-            if (!this.resultShown && this.states.current === 'playing') {
-              this.resultShown = true;
-              this.states.transition('levelEnd');
-            }
-          }, 900);
+          window.setTimeout(
+            () => {
+              if (!this.resultShown && this.states.current === 'playing') {
+                this.resultShown = true;
+                this.states.transition('levelEnd');
+              }
+            },
+            this.bossFinale ? BOSS_FINALE_MS : LEVEL_END_MS,
+          );
           break;
         default:
           break;
@@ -564,8 +602,15 @@ export class Game {
       this.framePerf.seconds += frameDt;
       if (frameDt > 1 / 30) this.framePerf.slow++;
     }
+    if (this.slowSeconds > 0) {
+      this.slowSeconds -= frameDt;
+      if (this.slowSeconds <= 0 && this.sim.status === 'running' && this.loop.timeScale > 0) {
+        this.loop.timeScale = 1;
+      }
+    }
     this.world.squad.handleEvents(this.frameEvents);
-    this.world.update(this.sim, alpha, frameDt);
+    this.world.enemies.handleEvents(this.frameEvents, this.world.squad.centerX);
+    this.world.update(this.sim, alpha, frameDt * this.loop.timeScale);
     this.renderer.setScroll(this.sim.distance);
     const squadX = this.world.squad.centerX;
     const scrollDz = this.sim.distance - this.lastDistance;
@@ -580,6 +625,7 @@ export class Game {
     const depth = squadDepth(this.sim.units);
     this.renderer.rig.targetAnchorZ = depth * 0.7;
     this.renderer.rig.targetZoom = 1 + Math.min(0.3, depth * 0.03);
+    this.renderer.rig.targetTilt = this.sim.bossId !== null ? 1 : 0;
     this.renderer.render(frameDt, true);
     if (this.states.current === 'playing' && this.settings.get().quality === 'auto') {
       const change = this.governor.sample(frameDt);

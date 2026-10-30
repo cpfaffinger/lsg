@@ -10,10 +10,17 @@ export class Hud {
   readonly root: HTMLDivElement;
   private readonly progressFill: HTMLDivElement;
   private readonly coins: HTMLSpanElement;
+  private readonly coinBox: HTMLDivElement;
   private readonly levelLabel: HTMLSpanElement;
   private readonly squadBadge: HTMLDivElement;
   private readonly bossBar: HTMLDivElement;
   private readonly bossFill: HTMLDivElement;
+  private readonly bossGhost: HTMLDivElement;
+  private readonly screenFlash: HTMLDivElement;
+  private readonly banner: HTMLDivElement;
+  private ghostHp = 1;
+  private shownUnits = 0;
+  private lastCoinBump = 0;
   private readonly bossName: HTMLSpanElement;
   private readonly comboBox: HTMLDivElement;
   private readonly weaponBadge: HTMLDivElement;
@@ -35,20 +42,21 @@ export class Hud {
     const progress = el('div', 'hud-progress');
     this.progressFill = el('div', 'hud-progress-fill');
     progress.appendChild(this.progressFill);
-    const coinBox = el('div', 'hud-coins');
-    coinBox.appendChild(el('span', 'coin-icon'));
+    this.coinBox = el('div', 'hud-coins');
+    this.coinBox.appendChild(el('span', 'coin-icon'));
     this.coins = el('span', 'hud-coins-value');
-    coinBox.appendChild(this.coins);
+    this.coinBox.appendChild(this.coins);
     this.pauseButton = el('button', 'hud-pause interactive');
     this.pauseButton.type = 'button';
     this.pauseButton.textContent = '❚❚';
-    top.append(this.levelLabel, progress, coinBox, this.pauseButton);
+    top.append(this.levelLabel, progress, this.coinBox, this.pauseButton);
 
     this.bossBar = el('div', 'hud-boss');
     this.bossName = el('span', 'hud-boss-name');
     const bossTrack = el('div', 'hud-boss-track');
+    this.bossGhost = el('div', 'hud-boss-ghost');
     this.bossFill = el('div', 'hud-boss-fill');
-    bossTrack.appendChild(this.bossFill);
+    bossTrack.append(this.bossGhost, this.bossFill);
     this.bossBar.append(this.bossName, bossTrack);
     this.bossBar.hidden = true;
 
@@ -62,7 +70,17 @@ export class Hud {
       this.labels.push(label);
       this.root.appendChild(label);
     }
-    this.root.append(top, this.bossBar, this.weaponBadge, this.comboBox, this.squadBadge);
+    this.screenFlash = el('div', 'hud-flash');
+    this.banner = el('div', 'hud-banner');
+    this.root.append(
+      this.screenFlash,
+      top,
+      this.bossBar,
+      this.weaponBadge,
+      this.comboBox,
+      this.squadBadge,
+      this.banner,
+    );
     parent.appendChild(this.root);
     this.refreshTexts();
   }
@@ -70,6 +88,25 @@ export class Hud {
   refreshTexts(): void {
     this.pauseButton.setAttribute('aria-label', t('hud.pause'));
     this.bossName.textContent = t('hud.boss');
+  }
+
+  /** Tints the screen edges for a moment: a gate result or a heavy loss. */
+  flash(tone: 'good' | 'bad' | 'weapon'): void {
+    this.screenFlash.dataset.tone = tone;
+    this.restartAnimation(this.screenFlash, 'active');
+  }
+
+  /** Slams a big word onto the screen: a boss arrives or a new weapon is picked up. */
+  announce(text: string, tone: 'boss' | 'weapon'): void {
+    this.banner.textContent = text;
+    this.banner.dataset.tone = tone;
+    this.restartAnimation(this.banner, 'active');
+  }
+
+  private restartAnimation(element: HTMLElement, className: string): void {
+    element.classList.remove(className);
+    void element.offsetWidth;
+    element.classList.add(className);
   }
 
   set visible(value: boolean) {
@@ -124,6 +161,11 @@ export class Hud {
     if (sim.stats.coins !== this.lastCoins) {
       this.lastCoins = sim.stats.coins;
       this.coins.textContent = formatNumber(sim.stats.coins);
+      const now = performance.now();
+      if (now - this.lastCoinBump > COIN_BUMP_MS) {
+        this.lastCoinBump = now;
+        this.restartAnimation(this.coinBox, 'bump');
+      }
     }
 
     this.updateCombo(sim.combo);
@@ -145,7 +187,12 @@ export class Hud {
         this.squadBadge.classList.add(sim.units > this.lastUnits ? 'bump-up' : 'bump-down');
       }
       this.lastUnits = sim.units;
-      this.squadBadge.textContent = formatCompact(sim.units);
+    }
+    // The counter runs up to the new size, which sells a big gate better than a jump.
+    if (this.shownUnits !== sim.units) {
+      const step = (sim.units - this.shownUnits) * COUNT_RATE;
+      this.shownUnits = Math.abs(step) < 1 ? sim.units : Math.round(this.shownUnits + step);
+      this.setText(LABEL_POOL + 1, this.squadBadge, formatCompact(this.shownUnits));
     }
 
     let used = 0;
@@ -168,12 +215,23 @@ export class Hud {
     }
 
     if (this.bossBar.hidden !== (boss === null)) this.bossBar.hidden = boss === null;
-    if (boss) this.bossFill.style.transform = `scaleX(${Math.max(0, boss.hp / boss.maxHp).toFixed(4)})`;
+    if (boss) {
+      const hp = Math.max(0, boss.hp / boss.maxHp);
+      this.ghostHp = Math.max(hp, this.ghostHp + (hp - this.ghostHp) * GHOST_RATE);
+      this.bossFill.style.transform = `scaleX(${hp.toFixed(4)})`;
+      this.bossGhost.style.transform = `scaleX(${this.ghostHp.toFixed(4)})`;
+    } else {
+      this.ghostHp = 1;
+    }
   }
 }
 
 const COMBO_MIN = 5;
 const COMBO_MILESTONE = 25;
+const COIN_BUMP_MS = 140;
+/** Share of the remaining difference the squad counter and the boss ghost bar cover per frame. */
+const COUNT_RATE = 0.22;
+const GHOST_RATE = 0.05;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag);

@@ -73,7 +73,7 @@ export const THEMES: Record<WorldId, WorldTheme> = {
     },
     ground: { color: 0x15121f, roughness: 0.8 },
     edge: { color: 0xff3fd8, glow: 3 },
-    grading: { saturation: 1.2, contrast: 1.1, vignette: 0.45, bloom: 1.15 },
+    grading: { saturation: 1.2, contrast: 1.1, vignette: 0.45, bloom: 0.95 },
   },
   station: {
     id: 'station',

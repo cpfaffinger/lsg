@@ -127,6 +127,7 @@ export function instanceGeometry(
 /**
  * Per-vertex: aSkin = (bone 0, bone 1, weight 0, weight 1), aAttach = weapon id (0 = body).
  * Per-instance: iParams = (time offset, clip 0 or 1, hit flash, recoil).
+ * vShade darkens the feet and varies each figure a little, so crowds keep their depth.
  * uAttach selects the visible weapon; other weapons collapse to a point.
  */
 const SKINNING_GLSL = /* glsl */ `
@@ -140,6 +141,7 @@ uniform float uAttach;
 uniform vec4 uClips[2]; // start frame, frame count, frames per second, unused
 varying vec4 vSurface;
 varying float vFlash;
+varying float vShade;
 
 mat4 lsgBone(float bone, int frame) {
   int b = int(bone + 0.5) * 3;
@@ -206,18 +208,29 @@ export function createSkinnedMaterials(id: CharacterId, teamHex = 0xffffff): Ski
         '#include <beginnormal_vertex>',
         `mat4 lsgSkin = lsgSkinMatrix();\nvec3 objectNormal = normalize(mat3(lsgSkin) * normal.xyz);`,
       )
-      .replace('#include <begin_vertex>', 'vec3 transformed = (lsgSkin * vec4(lsgPlace(position), 1.0)).xyz;')
+      .replace(
+        '#include <begin_vertex>',
+        `vec3 transformed = (lsgSkin * vec4(lsgPlace(position), 1.0)).xyz;
+        float lsgHeight = (instanceMatrix * vec4(transformed, 1.0)).y;
+        vShade = mix(0.5, 1.0, smoothstep(0.0, 0.85, lsgHeight)) * (0.9 + fract(iParams.x * 7.31) * 0.2);`,
+      )
       .replace(
         '#include <color_vertex>',
         `#include <color_vertex>\nvColor.rgb = mix(vColor.rgb, uTeamColor * vColor.rgb, aSurface.w);\nvSurface = aSurface;\nvFlash = iParams.z;`,
       );
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec4 vSurface;\nvarying float vFlash;')
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec4 vSurface;\nvarying float vFlash;\nvarying float vShade;',
+      )
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= vShade;')
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = max(0.05, vSurface.y);')
       .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = vSurface.x;')
       .replace(
         '#include <emissivemap_fragment>',
-        `#include <emissivemap_fragment>\ntotalEmissiveRadiance += diffuseColor.rgb * vSurface.z * 2.0 + vec3(vFlash);`,
+        `#include <emissivemap_fragment>
+        float lsgRim = pow(1.0 - saturate(dot(normal, normalize(vViewPosition))), 3.0);
+        totalEmissiveRadiance += diffuseColor.rgb * (vSurface.z * 2.0 + lsgRim * 0.8) + vec3(vFlash);`,
       );
   };
   material.customProgramCacheKey = () => `lsg-skinned-${id}`;

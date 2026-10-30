@@ -30,6 +30,11 @@ const CROWD_SIZE = 50;
 const WEAPON_MODEL: Record<WeaponId, number> = { rifle: 1, spread: 2, laser: 3, rocket: 4 };
 /** How fast the recoil kick fades, per second. */
 const RECOIL_DECAY = 16;
+/** Seconds a lost soldier takes to fall, and how many can fall at once. */
+const FALL_SECONDS = 0.42;
+const MAX_FALLING = 24;
+/** Fallen soldiers shown per event; bigger losses read through the counter. */
+const FALLS_PER_LOSS = 6;
 
 interface UnitState {
   x: number;
@@ -38,6 +43,13 @@ interface UnitState {
   phase: number;
   /** 1 right after this soldier fired, decays to 0. */
   recoil: number;
+}
+
+interface FallingSoldier {
+  x: number;
+  z: number;
+  phase: number;
+  age: number;
 }
 
 /**
@@ -49,6 +61,10 @@ export class SquadView {
   private readonly materials: SkinnedMaterials;
   private readonly params: InstancedBufferAttribute;
   private readonly units: UnitState[] = [];
+  private readonly falling: FallingSoldier[] = [];
+  private readonly tilt = new Quaternion();
+  private readonly fallRotation = new Quaternion();
+  private readonly side = new Vector3(1, 0, 0);
   private readonly slot: SlotOffset = { x: 0, z: 0 };
   private readonly matrix = new Matrix4();
   private readonly position = new Vector3();
@@ -101,13 +117,53 @@ export class SquadView {
     this.materials.teamColor.value.setHex(hex).convertSRGBToLinear();
   }
 
-  /** Soldiers kick back exactly when the simulation fires their shot. */
+  /** Soldiers kick back exactly when the simulation fires their shot; lost ones topple over. */
   handleEvents(events: readonly SimEvent[]): void {
     for (const event of events) {
-      if (event.type !== 'shot') continue;
-      const unit = this.units[event.slot];
-      if (unit) unit.recoil = 1;
+      if (event.type === 'shot') {
+        const unit = this.units[event.slot];
+        if (unit) unit.recoil = 1;
+      } else if (event.type === 'unitsLost') {
+        const shown = Math.min(FALLS_PER_LOSS, event.count, MAX_FALLING - this.falling.length);
+        for (let i = 0; i < shown; i++) {
+          this.falling.push({
+            x: event.x + (Math.random() - 0.5) * 1.6,
+            z: Math.max(event.z, SQUAD_Z - 1) + (Math.random() - 0.5) * 0.8,
+            phase: Math.random() * 6.28,
+            age: 0,
+          });
+        }
+      }
     }
+  }
+
+  /** Adds the falling soldiers behind the living ones and returns the new instance count. */
+  private placeFalling(count: number, frameDt: number): number {
+    const params = this.params.array as Float32Array;
+    let index = count;
+    for (let i = this.falling.length - 1; i >= 0; i--) {
+      const body = this.falling[i];
+      if (!body) continue;
+      body.age += frameDt;
+      const t = body.age / FALL_SECONDS;
+      if (t >= 1) {
+        this.falling.splice(i, 1);
+        continue;
+      }
+      if (index >= CAP) continue;
+      const eased = 1 - (1 - t) * (1 - t);
+      this.position.set(body.x, 0.3 * 4 * t * (1 - t), body.z + eased * 1.4);
+      this.fallRotation.copy(this.tilt.setFromAxisAngle(this.side, eased * 1.5)).multiply(this.quaternion);
+      this.scaleVec.setScalar(SOLDIER_SCALE * (t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3));
+      this.matrix.compose(this.position, this.fallRotation, this.scaleVec);
+      this.mesh.setMatrixAt(index, this.matrix);
+      params[index * 4] = body.phase;
+      params[index * 4 + 1] = 0;
+      params[index * 4 + 2] = (1 - t) * 0.7;
+      params[index * 4 + 3] = 0;
+      index++;
+    }
+    return index;
   }
 
   update(sim: Simulation, alpha: number, frameDt: number): void {
@@ -143,7 +199,7 @@ export class SquadView {
       params[i * 4 + 2] = 0;
       params[i * 4 + 3] = unit.recoil;
     }
-    this.mesh.count = count;
+    this.mesh.count = this.placeFalling(count, frameDt);
     this.mesh.instanceMatrix.needsUpdate = true;
     this.params.needsUpdate = true;
   }

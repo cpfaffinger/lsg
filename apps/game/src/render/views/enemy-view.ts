@@ -8,7 +8,7 @@ import {
   type Scene,
 } from 'three';
 import type { Simulation } from '../../sim/simulation.ts';
-import type { EnemyKind } from '../../sim/types.ts';
+import type { EnemyKind, SimEvent } from '../../sim/types.ts';
 import { createAnimatedMaterials, STILL } from '../models/animated-material.ts';
 import { buildShieldPlate, ENEMY_MODELS } from '../models/enemies.ts';
 import type { Detail } from '../models/shapes.ts';
@@ -25,6 +25,28 @@ const CAPACITY: Record<EnemyKind, number> = {
 };
 
 const BIG_KINDS: ReadonlySet<EnemyKind> = new Set(['boss', 'miniboss', 'tank']);
+
+/** How long a killed enemy stays visible and how far the hit flings it back. */
+const DEATHS: Record<EnemyKind, { seconds: number; knock: number; hop: number; tilt: number }> = {
+  runner: { seconds: 0.34, knock: 2.6, hop: 0.55, tilt: 1.5 },
+  shooter: { seconds: 0.34, knock: 2.2, hop: 0.5, tilt: 1.5 },
+  shield: { seconds: 0.4, knock: 1.8, hop: 0.4, tilt: 1.4 },
+  splitter: { seconds: 0.26, knock: 1.2, hop: 0.7, tilt: 0.6 },
+  tank: { seconds: 0.55, knock: 1.2, hop: 0.2, tilt: 1.45 },
+  miniboss: { seconds: 0.9, knock: 1.4, hop: 0.2, tilt: 1.45 },
+  boss: { seconds: 1.7, knock: 1.5, hop: 0, tilt: 1.3 },
+};
+/** Falling figures at once; a big volley kills more than anyone can follow. */
+const MAX_FALLING = 140;
+
+interface FallingEnemy {
+  kind: EnemyKind;
+  x: number;
+  z: number;
+  yaw: number;
+  seed: number;
+  age: number;
+}
 
 /** Enemies further away than this (along -z) use the low-detail model. */
 const LOD_DISTANCE = 42;
@@ -48,6 +70,11 @@ export class EnemyView {
   private readonly quaternion = new Quaternion();
   private readonly scale = new Vector3(1, 1, 1);
   private readonly up = new Vector3(0, 1, 0);
+  private readonly tilt = new Quaternion();
+  private readonly side = new Vector3(1, 0, 0);
+  private readonly falling: FallingEnemy[] = [];
+  private lastSim: Simulation | null = null;
+  private lastDistance = 0;
   /** Scales the LOD switch distance (quality setting). */
   lodBias = 1;
 
@@ -99,7 +126,60 @@ export class EnemyView {
     }
   }
 
-  update(sim: Simulation, alpha: number): void {
+  /** Killed enemies are flung back for a moment instead of vanishing. */
+  handleEvents(events: readonly SimEvent[], squadX: number): void {
+    for (const event of events) {
+      if (event.type !== 'enemyKilled' || this.falling.length >= MAX_FALLING) continue;
+      this.falling.push({
+        kind: event.kind,
+        x: event.x,
+        z: event.z,
+        yaw: Math.atan2(squadX - event.x, Math.max(4, -event.z)) * 0.6,
+        seed: Math.random() * 6.28,
+        age: 0,
+      });
+    }
+  }
+
+  private updateFalling(sim: Simulation, frameDt: number): void {
+    if (sim !== this.lastSim) {
+      this.lastSim = sim;
+      this.lastDistance = sim.distance;
+      this.falling.length = 0;
+    }
+    const scroll = Math.max(0, sim.distance - this.lastDistance);
+    this.lastDistance = sim.distance;
+    for (let i = this.falling.length - 1; i >= 0; i--) {
+      const body = this.falling[i];
+      if (!body) continue;
+      const death = DEATHS[body.kind];
+      body.age += frameDt;
+      body.z += scroll;
+      const t = body.age / death.seconds;
+      const entry = this.kinds.get(body.kind);
+      if (t >= 1) {
+        this.falling.splice(i, 1);
+        continue;
+      }
+      if (!entry || entry.nearCount >= CAPACITY[body.kind]) continue;
+      const model = ENEMY_MODELS[body.kind];
+      const eased = 1 - (1 - t) * (1 - t);
+      this.position.set(body.x, model.lift + death.hop * 4 * t * (1 - t), body.z - death.knock * eased);
+      this.quaternion.setFromAxisAngle(this.up, body.yaw);
+      this.quaternion.multiply(this.tilt.setFromAxisAngle(this.side, -death.tilt * eased));
+      this.scale.setScalar(model.scale * (t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3));
+      this.matrix.compose(this.position, this.quaternion, this.scale);
+      const index = entry.nearCount++;
+      entry.near.setMatrixAt(index, this.matrix);
+      const params = entry.nearParams.array as Float32Array;
+      params[index * 4] = body.seed;
+      params[index * 4 + 1] = 0;
+      params[index * 4 + 2] = (1 - t) * (1 - t) * (BIG_KINDS.has(body.kind) ? 0.5 : 1.4);
+      params[index * 4 + 3] = 0;
+    }
+  }
+
+  update(sim: Simulation, alpha: number, frameDt: number): void {
     for (const entry of this.kinds.values()) {
       entry.nearCount = 0;
       entry.farCount = 0;
@@ -134,6 +214,7 @@ export class EnemyView {
       params[index * 4 + 2] = enemy.hitFlash > 0 ? (BIG_KINDS.has(enemy.kind) ? 0.08 : 0.6) : 0;
       params[index * 4 + 3] = 0;
     }
+    this.updateFalling(sim, frameDt);
     for (const entry of this.kinds.values()) {
       entry.near.count = entry.nearCount;
       entry.far.count = entry.farCount;

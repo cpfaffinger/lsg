@@ -86,7 +86,7 @@ export class EffectsDirector {
   private bossDeath(x: number, z: number): void {
     for (let i = 1; i <= 7; i++) {
       this.delayed.push({
-        at: this.clock + i * 0.16,
+        at: this.clock + i * 0.1,
         run: () => {
           const ox = x + (Math.random() - 0.5) * 4;
           const oy = 1 + Math.random() * 5;
@@ -100,7 +100,7 @@ export class EffectsDirector {
       });
     }
     this.delayed.push({
-      at: this.clock + 1.3,
+      at: this.clock + 0.85,
       run: () => {
         this.ground.shockwave(x, z, 22, 0xff2050, 5, 1);
         this.flash(x, 3, z, 0xffffff, 18, 0.35, 6);
@@ -385,6 +385,9 @@ export class EffectsDirector {
               ...rgb(color, 3),
               drag: 4,
             });
+          }
+          if (event.after > event.before) {
+            this.sparks(squadX, 1, -1, Math.min(36, 8 + event.after - event.before), color, 6, 3);
           }
           const label = this.gatePassLabel(event);
           if (label) this.text.spawn(label, event.x, 2.6, 0, good ? 0x5dff9b : 0xff6474, 1.3, 1.1, 2.5);

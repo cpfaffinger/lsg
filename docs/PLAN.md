@@ -55,6 +55,7 @@ Abweichungen vom ursprünglichen Plan, mit Begründung. Wo dieser Abschnitt und 
 | 2026-10-30 | Betrieb | **Öffentliches GitHub-Repo** `cpfaffinger/lsg` als `origin` statt rein lokalem Git; Serverdetails liegen nur noch in ignorierten `*.local.md`-Dateien | Wunsch nach einem öffentlichen Produkt-Repo |
 | 2026-10-30 | Betrieb | Deployment auf den eigenen Server unter https://lsg.gleesh.net; Host-Port per `LSG_HTTP_BIND` nur lokal gebunden, öffentliche Adresse vorerst über `LSG_PUBLIC_URL` | Der Server hat bereits einen zentralen nginx; Details in `docs/DEPLOY.md`. Der Wert im Admin-Bereich hat Vorrang vor `LSG_PUBLIC_URL` |
 | 2026-10-30 | M8 | Playtest mit Personen, echte Gerätetests, Lighthouse und Offline-Test im echten Browser **nicht autonom durchführbar** | Siehe Abschnitt 7 „Offene Punkte nach 1.0“ |
+| 2026-10-30 | Polish | **Horden bleiben breit** statt zu einer Reihe zusammenzulaufen; **erwartete Stärke** im Tuner an die echten Upgrades angepasst (1 + 0,08 je Level statt 0,045) | Die Zielsuche zog alle Läufer auf eine Linie, und gekaufte Upgrades lagen doppelt so hoch wie angenommen |
 
 ## 0. Getroffene Entscheidungen (2026-10-30)
 
@@ -358,7 +359,7 @@ Diese Punkte habe ich festgelegt; sie lassen sich jederzeit ändern:
 
 ## 7. Stand 1.0 und offene Punkte
 
-Alle Meilensteine M0 bis M8 sind umgesetzt und im lokalen Git-Repository (`master`, Tag `v1.0.0`) committet. `npm run check` (Lint, Typprüfung, Tests, Build) ist grün; die Bots gewinnen mit erwarteter Ausrüstung: gut 30/30, durchschnittlich 30/30, schwach (Tore zufällig) 13/30; mit Shop-Upgrades schaffen alle drei die ganze Kampagne.
+Alle Meilensteine M0 bis M8 sind umgesetzt und im lokalen Git-Repository (`master`, Tag `v1.0.0`) committet. `npm run check` (Lint, Typprüfung, Tests, Build) ist grün; die Bots gewinnen mit erwarteter Ausrüstung: gut 30/30, durchschnittlich 30/30, schwach (Tore zufällig) 10/30; mit Shop-Upgrades schaffen alle drei die ganze Kampagne.
 
 Diese Punkte brauchen Menschen oder echte Geräte und sind daher offen:
 - **Playtest** mit mehreren Personen, besonders Schwierigkeit ab Welt 2 und die Boss-Level 20 und 30.

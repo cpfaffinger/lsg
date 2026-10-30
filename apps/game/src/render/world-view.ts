@@ -26,7 +26,7 @@ export class WorldView {
   update(sim: Simulation, alpha: number, frameDt: number): void {
     sharedAnimationUniforms.uTime.value += frameDt;
     this.squad.update(sim, alpha, frameDt);
-    this.enemies.update(sim, alpha);
+    this.enemies.update(sim, alpha, frameDt);
     this.projectiles.update(sim, alpha);
     this.gates.update(sim, alpha, frameDt);
     this.obstacles.update(sim, alpha);

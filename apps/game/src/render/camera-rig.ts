@@ -5,6 +5,8 @@ import { LANE_WIDTH } from '../sim/world.ts';
 const BASE_OFFSET = new Vector3(0, 11, 10);
 const BASE_LOOK_AT = new Vector3(0, 0, -9);
 const BASE_DISTANCE = BASE_OFFSET.length();
+/** How far the look-at point moves ahead during a boss fight. */
+const BOSS_TILT = 3.5;
 
 /**
  * Third-person camera behind and above the squad.
@@ -24,6 +26,9 @@ export class CameraRig {
   /** Shifts the whole rig towards the camera so deep squads stay in view. Smoothed. */
   anchorZ = 0;
   targetAnchorZ = 0;
+  /** 1 tilts the view up so a boss clears the health bar. Smoothed towards `targetTilt`. */
+  tilt = 0;
+  targetTilt = 0;
   /** Horizontal follow of the squad (fraction of its x position). */
   followX = 0;
   private shakeStrength = 0;
@@ -54,6 +59,7 @@ export class CameraRig {
   update(dt: number, enableShake: boolean): void {
     this.zoom += (this.targetZoom - this.zoom) * Math.min(1, dt * 2);
     this.anchorZ += (this.targetAnchorZ - this.anchorZ) * Math.min(1, dt * 2);
+    this.tilt += (this.targetTilt - this.tilt) * Math.min(1, dt * 1.5);
     this.shakeTime += dt;
     this.shakeStrength = Math.max(0, this.shakeStrength - dt * 2.5);
     const s = enableShake ? this.shakeStrength * this.shakeStrength * 0.6 : 0;
@@ -67,6 +73,7 @@ export class CameraRig {
     this.position.x += this.followX;
     this.position.z += this.anchorZ;
     this.lookAt.copy(BASE_LOOK_AT).multiplyScalar(scale);
+    this.lookAt.z -= this.tilt * BOSS_TILT * scale;
     this.lookAt.x += this.followX + this.shakeOffset.x * 0.5;
     this.lookAt.z += this.anchorZ;
     this.camera.position.copy(this.position);

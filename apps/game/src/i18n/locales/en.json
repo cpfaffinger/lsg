@@ -90,7 +90,8 @@
     "endless": "Endless",
     "distance": "{distance} m",
     "pause": "Pause",
-    "boss": "Boss",
+    "boss": "Dragon",
+    "miniboss": "Demon",
     "combo": "{n}× combo"
   },
   "musicStyle": {

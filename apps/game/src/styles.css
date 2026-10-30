@@ -227,6 +227,7 @@ body {
 }
 
 .hud-boss-track {
+  position: relative;
   margin-top: 4px;
   height: 14px;
   border-radius: 7px;
@@ -235,11 +236,138 @@ body {
   overflow: hidden;
 }
 
-.hud-boss-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #ff4d5e, #ff9a3c);
+.hud-boss-fill,
+.hud-boss-ghost {
+  position: absolute;
+  inset: 0;
   transform-origin: left center;
-  transition: transform 0.15s linear;
+}
+
+.hud-boss-fill {
+  background: linear-gradient(90deg, #ff4d5e, #ff9a3c);
+  transition: transform 0.1s linear;
+}
+
+.hud-boss-ghost {
+  background: #fff3d8;
+}
+
+/* The boss changes its attacks at these marks. */
+.hud-boss-track::before,
+.hud-boss-track::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgb(0 0 0 / 55%);
+}
+
+.hud-boss-track::before {
+  left: 33%;
+}
+
+.hud-boss-track::after {
+  left: 66%;
+}
+
+.hud-flash {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  --tone: 54 226 122;
+  box-shadow: inset 0 0 90px 28px rgb(var(--tone) / 75%);
+}
+
+.hud-flash[data-tone='bad'] {
+  --tone: 255 59 85;
+}
+
+.hud-flash[data-tone='weapon'] {
+  --tone: 255 176 32;
+}
+
+.hud-flash.active {
+  animation: flash-fade 0.45s ease-out;
+}
+
+@keyframes flash-fade {
+  from {
+    opacity: 1;
+  }
+}
+
+.hud-banner {
+  position: absolute;
+  top: 28%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: clamp(38px, 10vw, 76px);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  -webkit-text-stroke: 2px rgb(0 0 0 / 70%);
+  text-shadow: 0 0 24px rgb(255 176 32 / 90%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hud-banner[data-tone='boss'] {
+  color: #ffe4e4;
+  text-shadow: 0 0 28px rgb(255 40 70 / 95%);
+}
+
+.hud-banner.active {
+  animation: banner-slam 1.5s ease-out;
+}
+
+@keyframes banner-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  14%,
+  78% {
+    opacity: 1;
+  }
+}
+
+@keyframes banner-slam {
+  0% {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+
+  14% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  78% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
+.hud-coins.bump .coin-icon {
+  animation: coin-bump 0.14s ease-out;
+}
+
+@keyframes coin-bump {
+  50% {
+    scale: 1.35;
+  }
 }
 
 .squad-badge {
@@ -462,7 +590,12 @@ body {
   .start-hint,
   .screen-panel,
   .squad-badge.bump-up,
-  .squad-badge.bump-down {
+  .squad-badge.bump-down,
+  .hud-coins.bump .coin-icon {
     animation: none;
+  }
+
+  .hud-banner.active {
+    animation-name: banner-fade;
   }
 }
