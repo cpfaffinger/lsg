@@ -20,6 +20,8 @@ export interface ServerDeps {
   oidc?: OidcProvider;
   /** Disable the daily backup timer (tests). */
   scheduleBackups?: boolean;
+  /** Log destination (stdout plus daily files in production); tests keep the default. */
+  logStream?: { write(line: string): void };
 }
 
 export interface Server {
@@ -33,14 +35,16 @@ export async function buildServer({
   db,
   oidc,
   scheduleBackups = false,
+  logStream,
 }: ServerDeps): Promise<Server> {
   const ctx = new AppContext(config, db, oidc ?? new GoogleOidc());
   const backups = new BackupService(db, config.backupDir);
 
   const app = Fastify({
-    // Request logs (info level) would only add noise, e.g. health checks every 30 s.
-    // Warnings and errors still reach the container log.
-    logger: { level: 'warn' },
+    // Per-request logs would only add noise (health checks every 30 s); startup, backups,
+    // warnings and errors are logged. Tests only log warnings.
+    logger: logStream ? { level: 'info', stream: logStream } : { level: 'warn' },
+    disableRequestLogging: true,
     // Proxy headers are evaluated explicitly (see http/request-info.ts), never implicitly.
     trustProxy: false,
     bodyLimit: 512 * 1024,
@@ -68,7 +72,13 @@ export async function buildServer({
   await ensureInitialAdmin(ctx);
 
   if (scheduleBackups) {
-    backups.startSchedule((info) => ctx.audit.log('system', 'backup.created', info.name));
+    backups.startSchedule(
+      (info) => {
+        ctx.audit.log('system', 'backup.created', info.name);
+        app.log.info(`Backup created: ${info.name}`);
+      },
+      (error) => app.log.error({ err: error as Error }, 'Scheduled backup failed'),
+    );
     const maintenance = setInterval(() => {
       ctx.users.pruneSessions();
       ctx.admins.pruneSessions();

@@ -60,14 +60,17 @@ export class BackupService {
   }
 
   /** Creates a backup if the newest one is older than a day; checks hourly. */
-  startSchedule(onBackup: (info: BackupInfo) => void): void {
+  startSchedule(
+    onBackup: (info: BackupInfo) => void,
+    onError: (error: unknown) => void = (error) => console.error('Scheduled backup failed', error),
+  ): void {
     const check = () => {
       const newest = this.list()[0];
       if (!newest || Date.now() - Date.parse(newest.createdAt) > 24 * 3600_000) {
         try {
           onBackup(this.create());
         } catch (error) {
-          console.error('Scheduled backup failed', error);
+          onError(error);
         }
       }
     };
