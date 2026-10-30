@@ -143,7 +143,13 @@ export class ReplayRecorder {
         });
         break;
       case 'unitsLost':
-        this.log.push({ ...base, type: 'loss', cause: event.cause, count: event.count, unitsAfter: sim.units });
+        this.log.push({
+          ...base,
+          type: 'loss',
+          cause: event.cause,
+          count: event.count,
+          unitsAfter: sim.units,
+        });
         break;
       case 'bossSpawned':
         this.log.push({ ...base, type: 'boss', kind: event.kind });

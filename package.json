@@ -25,13 +25,15 @@
     "test:watch": "vitest",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "probe": "node --disable-warning=ExperimentalWarning tools/balance/probe.ts",
-    "replay": "node --disable-warning=ExperimentalWarning tools/replay/analyze.ts"
+    "replay": "node --disable-warning=ExperimentalWarning tools/replay/analyze.ts",
+    "screenshots": "node --disable-warning=ExperimentalWarning tools/screenshots/capture.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.19.2",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
+    "playwright-core": "^1.64.1",
     "prettier": "^3.9.10",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1",

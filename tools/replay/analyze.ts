@@ -19,7 +19,9 @@ if (replay.format !== 'lsg-replay') {
 
 const { result, modifiers, level, client } = replay;
 console.info(`Game ${replay.gameVersion}, recorded ${replay.createdAt}, mode ${replay.mode}`);
-console.info(`Level ${level.id}, world ${level.world}, ${result.status} after ${result.stats.elapsed.toFixed(1)} s`);
+console.info(
+  `Level ${level.id}, world ${level.world}, ${result.status} after ${result.stats.elapsed.toFixed(1)} s`,
+);
 console.info(`Modifiers ${JSON.stringify(modifiers)}`);
 console.info(`Result ${JSON.stringify(result.stats)}, units ${result.units}`);
 if (client) {
