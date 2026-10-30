@@ -16,7 +16,8 @@ import {
 import { mediaUrl } from '../../media.ts';
 import { sharedAnimationUniforms } from './animated-material.ts';
 
-export type CharacterId = 'soldier' | 'enemy' | 'hazmat';
+const CHARACTER_IDS = ['soldier', 'enemy', 'hazmat', 'yeti', 'blob', 'orc', 'demon', 'dragon'] as const;
+export type CharacterId = (typeof CHARACTER_IDS)[number];
 
 interface BakedHeader {
   vertices: number;
@@ -94,7 +95,7 @@ function parse(buffer: ArrayBuffer): CharacterAsset {
 /** Loads all baked characters. Must finish before the scene is created. */
 export async function preloadCharacters(): Promise<void> {
   await Promise.all(
-    (['soldier', 'enemy', 'hazmat'] as const).map(async (id) => {
+    CHARACTER_IDS.map(async (id) => {
       const response = await fetch(mediaUrl(`models/${id}.bin`));
       assets.set(id, parse(await response.arrayBuffer()));
     }),

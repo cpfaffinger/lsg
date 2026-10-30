@@ -90,6 +90,36 @@ const AUDIO_CREDITS = [
     source: 'https://opengameart.org/node/107501',
   },
   {
+    name: 'Yeti',
+    authors: ['Quaternius'],
+    usedFor: 'Heavy enemy',
+    source: 'https://poly.pizza/m/ceRHrn8HHE',
+  },
+  {
+    name: 'Green Spiky Blob',
+    authors: ['Quaternius'],
+    usedFor: 'Splitter enemy',
+    source: 'https://poly.pizza/m/IoWG5F9WUc',
+  },
+  {
+    name: 'Orc',
+    authors: ['Quaternius'],
+    usedFor: 'Shield bearer',
+    source: 'https://poly.pizza/m/5vO2YJsPEf',
+  },
+  {
+    name: 'Blue Demon',
+    authors: ['Quaternius'],
+    usedFor: 'Mini boss',
+    source: 'https://poly.pizza/m/S7jYW6Amye',
+  },
+  {
+    name: 'Dragon Evolved',
+    authors: ['Quaternius'],
+    usedFor: 'Boss',
+    source: 'https://poly.pizza/m/LlwD0QNUPj',
+  },
+  {
     name: 'Toon Shooter Game Kit',
     authors: ['Quaternius'],
     usedFor: 'soldiers, enemies and weapons',

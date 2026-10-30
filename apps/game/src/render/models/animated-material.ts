@@ -60,8 +60,6 @@ export interface AnimationProfile {
   wobble: number;
 }
 
-export const WALK: AnimationProfile = { legSwing: 0.65, bob: 0.06, armSwing: 0.18, wobble: 0 };
-export const HEAVY: AnimationProfile = { legSwing: 0.35, bob: 0.03, armSwing: 0.1, wobble: 0 };
 export const STILL: AnimationProfile = { legSwing: 0, bob: 0, armSwing: 0, wobble: 0.08 };
 
 /** Uniforms shared by all materials, updated once per frame. */

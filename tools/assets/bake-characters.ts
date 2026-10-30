@@ -54,6 +54,46 @@ const CHARACTERS: CharacterConfig[] = [
     teamRigid: {},
     lods: [0.4, 0.12],
   },
+  {
+    id: 'yeti',
+    clips: { run: 'Walk', hold: 'Punch' },
+    attachments: [],
+    team: {},
+    teamRigid: {},
+    lods: [0.4, 0.14],
+  },
+  {
+    id: 'blob',
+    clips: { run: 'Walk', hold: 'Bite_Front' },
+    attachments: [],
+    team: {},
+    teamRigid: {},
+    lods: [0.5, 0.18],
+  },
+  {
+    id: 'orc',
+    clips: { run: 'Walk', hold: 'Punch' },
+    attachments: [],
+    team: {},
+    teamRigid: {},
+    lods: [0.34, 0.12],
+  },
+  {
+    id: 'demon',
+    clips: { run: 'Walk', hold: 'Punch' },
+    attachments: [],
+    team: {},
+    teamRigid: {},
+    lods: [0.6, 0.2],
+  },
+  {
+    id: 'dragon',
+    clips: { run: 'Fast_Flying', hold: 'Flying_Idle' },
+    attachments: [],
+    team: {},
+    teamRigid: {},
+    lods: [0.7, 0.2],
+  },
 ];
 
 const SOURCE = path.resolve('assets-src/downloads/models');
@@ -82,6 +122,7 @@ function surfaceOf(material: MeshStandardMaterial): [number, number, number] {
   const name = material.name.toLowerCase();
   if (name.startsWith('grey') || name.startsWith('lightgrey')) return [0.65, 0.42, 0];
   if (name.startsWith('darkgrey')) return [0.55, 0.5, 0];
+  if (name.startsWith('metal') || name.startsWith('gold')) return [0.7, 0.38, 0];
   if (name.startsWith('wood') || name.startsWith('darkwood')) return [0, 0.75, 0];
   if (name.startsWith('red')) return [0.1, 0.4, 0.25];
   if (name.startsWith('skin')) return [0, 0.6, 0];
@@ -325,9 +366,21 @@ async function bake(config: CharacterConfig): Promise<void> {
   const target = path.join(OUT, `${config.id}.bin`);
   fs.writeFileSync(target, Buffer.concat(output));
   const size = Math.round(fs.statSync(target).size / 1024);
+  // Heights in the first frame: bind-pose positions are in armature units, not world units.
+  const heights = compact.map((v) =>
+    [0, 1].reduce((y, slot) => {
+      const row = v.bones[slot as 0 | 1] * 12 + 4;
+      const m = matrices.slice(row, row + 4) as [number, number, number, number];
+      const posed = m[0] * v.position.x + m[1] * v.position.y + m[2] * v.position.z + m[3];
+      return y + posed * v.weights[slot as 0 | 1];
+    }, 0),
+  );
+  const low = heights.reduce((a, b) => Math.min(a, b), Infinity);
+  const high = heights.reduce((a, b) => Math.max(a, b), -Infinity);
   console.info(
     `${config.id}: ${size} KB, ${header.vertices} vertices, ${header.triangles.join('/')} triangles, ` +
-      `${header.bones} bones, ${header.frames} frames, weapon bones ${config.attachments.length}`,
+      `${header.bones} bones, ${header.frames} frames, y ${low.toFixed(2)}..${high.toFixed(2)}, ` +
+      `weapon bones ${config.attachments.length}`,
   );
 }
 

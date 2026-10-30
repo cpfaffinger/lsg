@@ -66,3 +66,8 @@ Alle Dateien liegen konvertiert in `apps/game/src/media/audio/`. `tools/assets/c
 | Character Soldier (Toon Shooter Game Kit) | Quaternius | Trupp mit allen Waffen | https://poly.pizza/m/PpLF4rt4ah | CC0 |
 | Character Enemy (Toon Shooter Game Kit) | Quaternius | Läufer | https://poly.pizza/m/mdGe4IN31v | CC0 |
 | Character Hazmat (Toon Shooter Game Kit) | Quaternius | Schützen | https://poly.pizza/m/z3TSQYx1Kn | CC0 |
+| Yeti (Ultimate Monsters) | Quaternius | Panzer | https://poly.pizza/m/ceRHrn8HHE | CC0 |
+| Green Spiky Blob (Ultimate Monsters) | Quaternius | Splitter | https://poly.pizza/m/IoWG5F9WUc | CC0 |
+| Orc (Ultimate Monsters) | Quaternius | Schildträger (Energieschild prozedural) | https://poly.pizza/m/5vO2YJsPEf | CC0 |
+| Blue Demon (Ultimate Monsters) | Quaternius | Miniboss | https://poly.pizza/m/S7jYW6Amye | CC0 |
+| Dragon Evolved (Ultimate Monsters) | Quaternius | Boss | https://poly.pizza/m/LlwD0QNUPj | CC0 |

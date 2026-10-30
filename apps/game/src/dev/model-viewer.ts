@@ -15,24 +15,28 @@ import {
   PMREMGenerator,
   Scene,
   SRGBColorSpace,
+  Vector3,
   WebGLRenderer,
-  type BufferGeometry,
 } from 'three';
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
-import type { EnemyKind } from '../sim/types.ts';
+import { sharedAnimationUniforms } from '../render/models/animated-material.ts';
+import { ENEMY_MODELS } from '../render/models/enemies.ts';
 import {
-  createAnimatedMaterials,
-  sharedAnimationUniforms,
-  type AnimationProfile,
-} from '../render/models/animated-material.ts';
-import { buildEnemy, ENEMY_ANIMATION } from '../render/models/enemies.ts';
+  createSkinnedMaterials,
+  instanceGeometry,
+  preloadCharacters,
+} from '../render/models/skinned-character.ts';
+import type { EnemyKind } from '../sim/types.ts';
 
 /**
- * Development-only turntable for the procedural models (open the game with ?viewer).
- * ?viewer=far shows the low-detail variants.
+ * Development-only turntable for the enemy models (open the game with ?viewer).
+ * ?viewer=far shows the low-detail variants, &clip=1 the attack clip.
  */
 export async function startModelViewer(canvas: HTMLCanvasElement): Promise<void> {
-  const detail = new URLSearchParams(location.search).get('viewer') === 'far' ? 0 : 1;
+  await preloadCharacters();
+  const query = new URLSearchParams(location.search);
+  const detail = query.get('viewer') === 'far' ? 0 : 1;
+  const clip = Number(query.get('clip') ?? 0);
   const renderer = new WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
   renderer.outputColorSpace = SRGBColorSpace;
@@ -59,44 +63,30 @@ export async function startModelViewer(canvas: HTMLCanvasElement): Promise<void>
   floor.receiveShadow = true;
   scene.add(floor);
 
-  const entries: {
-    name: string;
-    geometry: BufferGeometry;
-    profile: AnimationProfile;
-    gait: number;
-    x: number;
-    size: number;
-    team?: number;
-  }[] = [];
+  const entries: { name: string; x: number; size: number }[] = [];
   const kinds: EnemyKind[] = ['runner', 'shooter', 'shield', 'splitter', 'tank', 'miniboss', 'boss'];
   const spacing = [1.4, 1.6, 1.9, 2.2, 3.2, 5, 6.5];
   let x = -8.2;
   kinds.forEach((kind, i) => {
-    x += (spacing[i] ?? 2) / 2;
-    entries.push({
-      name: kind,
-      geometry: buildEnemy(kind, detail),
-      profile: ENEMY_ANIMATION[kind].profile,
-      gait: ENEMY_ANIMATION[kind].gait,
-      x,
-      size: spacing[i] ?? 2,
-    });
-    x += (spacing[i] ?? 2) / 2;
-  });
-  for (const entry of entries) {
-    const materials = createAnimatedMaterials(entry.profile, entry.team ?? 0xffffff);
-    entry.geometry.setAttribute(
-      'iParams',
-      new InstancedBufferAttribute(new Float32Array([0, entry.gait, 0, 0]), 4),
-    );
-    const mesh = new InstancedMesh(entry.geometry, materials.material, 1);
+    const size = spacing[i] ?? 2;
+    x += size / 2;
+    const model = ENEMY_MODELS[kind];
+    const params = new InstancedBufferAttribute(new Float32Array([0, clip, 0, 0]), 4);
+    const materials = createSkinnedMaterials(model.id);
+    const mesh = new InstancedMesh(instanceGeometry(model.id, detail, params), materials.material, 1);
     mesh.customDepthMaterial = materials.depth;
-    mesh.setMatrixAt(0, new Matrix4().makeTranslation(entry.x, 0, 0));
+    mesh.setMatrixAt(
+      0,
+      new Matrix4().makeTranslation(x, model.lift, 0).scale(new Vector3().setScalar(model.scale)),
+    );
     mesh.castShadow = true;
+    mesh.frustumCulled = false;
     scene.add(mesh);
-  }
+    entries.push({ name: kind, x, size });
+    x += size / 2;
+  });
 
-  const focusName = new URLSearchParams(location.search).get('focus');
+  const focusName = query.get('focus');
   const focus = entries.find((e) => e.name === focusName) ?? null;
   const camera = new PerspectiveCamera(35, 1, 0.1, 200);
   const resize = () => {

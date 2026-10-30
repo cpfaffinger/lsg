@@ -9,10 +9,10 @@ import {
 } from 'three';
 import type { Simulation } from '../../sim/simulation.ts';
 import type { EnemyKind } from '../../sim/types.ts';
-import { createAnimatedMaterials } from '../models/animated-material.ts';
-import { buildEnemy, ENEMY_ANIMATION } from '../models/enemies.ts';
+import { createAnimatedMaterials, STILL } from '../models/animated-material.ts';
+import { buildShieldPlate, ENEMY_MODELS } from '../models/enemies.ts';
 import type { Detail } from '../models/shapes.ts';
-import { createSkinnedMaterials, instanceGeometry, type CharacterId } from '../models/skinned-character.ts';
+import { createSkinnedMaterials, instanceGeometry } from '../models/skinned-character.ts';
 
 const CAPACITY: Record<EnemyKind, number> = {
   runner: 600,
@@ -24,12 +24,6 @@ const CAPACITY: Record<EnemyKind, number> = {
   boss: 2,
 };
 
-/** Enemy kinds played by animated characters, with their size in the world. */
-const CHARACTER_KINDS: Partial<Record<EnemyKind, { id: CharacterId; scale: number }>> = {
-  runner: { id: 'enemy', scale: 0.56 },
-  shooter: { id: 'hazmat', scale: 0.62 },
-};
-
 const BIG_KINDS: ReadonlySet<EnemyKind> = new Set(['boss', 'miniboss', 'tank']);
 
 /** Enemies further away than this (along -z) use the low-detail model. */
@@ -38,13 +32,15 @@ const LOD_DISTANCE = 42;
 interface KindMeshes {
   near: InstancedMesh;
   far: InstancedMesh;
+  nearPlate: InstancedMesh | null;
+  farPlate: InstancedMesh | null;
   nearParams: InstancedBufferAttribute;
   farParams: InstancedBufferAttribute;
   nearCount: number;
   farCount: number;
 }
 
-/** Instanced, procedurally animated enemies with two levels of detail per kind. */
+/** Instanced, skeletally animated enemies with two levels of detail per kind. */
 export class EnemyView {
   private readonly kinds = new Map<EnemyKind, KindMeshes>();
   private readonly matrix = new Matrix4();
@@ -56,22 +52,15 @@ export class EnemyView {
   lodBias = 1;
 
   constructor(scene: Scene) {
+    const plateMaterials = createAnimatedMaterials(STILL);
     for (const kind of Object.keys(CAPACITY) as EnemyKind[]) {
-      const animated = CHARACTER_KINDS[kind];
-      const materials = animated
-        ? createSkinnedMaterials(animated.id)
-        : createAnimatedMaterials(ENEMY_ANIMATION[kind].profile);
+      const model = ENEMY_MODELS[kind];
+      const materials = createSkinnedMaterials(model.id);
       const make = (detail: Detail) => {
         const capacity = CAPACITY[kind];
         const params = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
         params.setUsage(DynamicDrawUsage);
-        let geometry;
-        if (animated) {
-          geometry = instanceGeometry(animated.id, detail, params);
-        } else {
-          geometry = buildEnemy(kind, detail);
-          geometry.setAttribute('iParams', params);
-        }
+        const geometry = instanceGeometry(model.id, detail, params);
         const mesh = new InstancedMesh(geometry, materials.material, capacity);
         mesh.customDepthMaterial = materials.depth;
         mesh.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -79,13 +68,29 @@ export class EnemyView {
         mesh.frustumCulled = false;
         mesh.count = 0;
         scene.add(mesh);
-        return { mesh, params };
+        let plate: InstancedMesh | null = null;
+        if (kind === 'shield') {
+          // The plate moves with its bearer, so it shares the instance data of the character.
+          const size = 1 / model.scale;
+          const plateGeometry = buildShieldPlate(detail).scale(size, size, size);
+          plateGeometry.setAttribute('iParams', params);
+          plate = new InstancedMesh(plateGeometry, plateMaterials.material, capacity);
+          plate.customDepthMaterial = plateMaterials.depth;
+          plate.instanceMatrix = mesh.instanceMatrix;
+          plate.castShadow = detail === 1;
+          plate.frustumCulled = false;
+          plate.count = 0;
+          scene.add(plate);
+        }
+        return { mesh, params, plate };
       };
       const near = make(1);
       const far = make(0);
       this.kinds.set(kind, {
         near: near.mesh,
         far: far.mesh,
+        nearPlate: near.plate,
+        farPlate: far.plate,
         nearParams: near.params,
         farParams: far.params,
         nearCount: 0,
@@ -115,16 +120,16 @@ export class EnemyView {
       else entry.nearCount++;
       // Face the squad, turning slightly towards it.
       const yaw = Math.atan2(sim.squadX - x, Math.max(4, -z)) * 0.6;
-      this.position.set(x, 0, z);
+      const model = ENEMY_MODELS[enemy.kind];
+      this.position.set(x, model.lift, z);
       this.quaternion.setFromAxisAngle(this.up, yaw);
-      const animated = CHARACTER_KINDS[enemy.kind];
-      this.scale.setScalar(animated?.scale ?? 1);
+      this.scale.setScalar(model.scale);
       this.matrix.compose(this.position, this.quaternion, this.scale);
       mesh.setMatrixAt(index, this.matrix);
       params[index * 4] = enemy.seed;
-      // Character enemies pick a clip (0 run, 1 stand and fire), the others a gait speed.
+      // Clip 0 is the way in, clip 1 the attack once the enemy has reached its firing position.
       const holding = enemy.holdZ !== null && enemy.z >= enemy.holdZ - 0.1;
-      params[index * 4 + 1] = animated ? (holding ? 1 : 0) : ENEMY_ANIMATION[enemy.kind].gait;
+      params[index * 4 + 1] = holding ? 1 : 0;
       // Big enemies are hit almost every frame; a strong flash would bleach them white.
       params[index * 4 + 2] = enemy.hitFlash > 0 ? (BIG_KINDS.has(enemy.kind) ? 0.08 : 0.6) : 0;
       params[index * 4 + 3] = 0;
@@ -132,6 +137,8 @@ export class EnemyView {
     for (const entry of this.kinds.values()) {
       entry.near.count = entry.nearCount;
       entry.far.count = entry.farCount;
+      if (entry.nearPlate) entry.nearPlate.count = entry.nearCount;
+      if (entry.farPlate) entry.farPlate.count = entry.farCount;
       entry.near.instanceMatrix.needsUpdate = true;
       entry.far.instanceMatrix.needsUpdate = true;
       entry.nearParams.needsUpdate = true;
