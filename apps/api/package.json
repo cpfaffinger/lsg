@@ -1,6 +1,6 @@
 {
   "name": "@lsg/api",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
   "dependencies": {
     "@fastify/cookie": "^11.1.5",
     "@fastify/rate-limit": "^11.2.1",
-    "@lsg/shared": "0.1.0",
+    "@lsg/shared": "1.0.0",
     "fastify": "^5.12.7",
     "jose": "^6.2.14"
   },

@@ -81,7 +81,17 @@ export function loadConfig(
     secretKey,
     initialAdminUser: emptyToNull(env.LSG_ADMIN_USER),
     initialAdminPassword: emptyToNull(env.LSG_ADMIN_PASSWORD),
-    version: env.LSG_VERSION ?? '0.1.0',
+    version: env.LSG_VERSION ?? packageVersion(),
     isProduction,
   };
+}
+
+/** Version from apps/api/package.json, so releases only bump the package files. */
+function packageVersion(): string {
+  try {
+    const file = path.join(import.meta.dirname, '..', 'package.json');
+    return (JSON.parse(fs.readFileSync(file, 'utf8')) as { version?: string }).version ?? 'unknown';
+  } catch {
+    return 'unknown';
+  }
 }

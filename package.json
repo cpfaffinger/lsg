@@ -1,6 +1,6 @@
 {
   "name": "lsg",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "LSG - Lane Shooting Game. Ad-free high-polish 3D lane shooter for the browser.",
   "type": "module",

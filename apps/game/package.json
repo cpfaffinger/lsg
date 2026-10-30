@@ -1,6 +1,6 @@
 {
   "name": "@lsg/game",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@lsg/shared": "0.1.0",
+    "@lsg/shared": "1.0.0",
     "idb-keyval": "^6.3.0",
     "postprocessing": "^6.39.5",
     "three": "~0.186.1"
