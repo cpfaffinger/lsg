@@ -2,7 +2,8 @@
 #
 #   docker compose up -d --build
 #
-# Exposes exactly one plain HTTP port (LSG_HTTP_PORT, default 8080).
+# Exposes exactly one plain HTTP port (LSG_HTTP_PORT, default 8080). Set LSG_HTTP_BIND=127.0.0.1
+# when a reverse proxy runs on the same host, so the port is not reachable from outside.
 # TLS, certificates and the public reverse proxy (e.g. Cloudflare) are not part of this project.
 # Persistent data lives in ./data next to this file (bind mount, no Docker volumes).
 
@@ -37,4 +38,4 @@ services:
     depends_on:
       - api
     ports:
-      - '${LSG_HTTP_PORT:-8080}:80'
+      - '${LSG_HTTP_BIND:-0.0.0.0}:${LSG_HTTP_PORT:-8080}:80'
