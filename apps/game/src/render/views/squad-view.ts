@@ -10,6 +10,7 @@ import {
 import { BALANCE } from '../../sim/balance.ts';
 import { formationSlot, visibleUnits, type SlotOffset } from '../../sim/formation.ts';
 import type { Simulation } from '../../sim/simulation.ts';
+import type { SimEvent } from '../../sim/types.ts';
 import { SQUAD_Z } from '../../sim/world.ts';
 import { createAnimatedMaterials, WALK, type AnimatedMaterials } from '../models/animated-material.ts';
 import { buildSoldier } from '../models/soldier.ts';
@@ -19,12 +20,16 @@ import type { Detail } from '../models/shapes.ts';
 const CAP = BALANCE.squad.visibleCap;
 /** Running cadence in radians per second. */
 const GAIT_SPEED = 11;
+/** How fast the recoil kick fades, per second. */
+const RECOIL_DECAY = 16;
 
 interface UnitState {
   x: number;
   z: number;
   scale: number;
   phase: number;
+  /** 1 right after this soldier fired, decays to 0. */
+  recoil: number;
 }
 
 /**
@@ -41,7 +46,6 @@ export class SquadView {
   private readonly position = new Vector3();
   private readonly quaternion = new Quaternion();
   private readonly scaleVec = new Vector3();
-  private time = 0;
   private detail: Detail = 1;
   private readonly scene: Scene;
 
@@ -85,22 +89,29 @@ export class SquadView {
     this.materials.teamColor.value.setHex(hex).convertSRGBToLinear();
   }
 
+  /** Soldiers kick back exactly when the simulation fires their shot. */
+  handleEvents(events: readonly SimEvent[]): void {
+    for (const event of events) {
+      if (event.type !== 'shot') continue;
+      const unit = this.units[event.slot];
+      if (unit) unit.recoil = 1;
+    }
+  }
+
   update(sim: Simulation, alpha: number, frameDt: number): void {
-    this.time += frameDt;
     const count = visibleUnits(sim.units);
     this.centerX = sim.prevSquadX + (sim.squadX - sim.prevSquadX) * alpha;
 
     while (this.units.length < count) {
       // New units spawn at the squad centre and grow into their slot.
-      this.units.push({ x: 0, z: 0, scale: 0, phase: Math.random() * Math.PI * 2 });
+      this.units.push({ x: 0, z: 0, scale: 0, phase: Math.random() * Math.PI * 2, recoil: 0 });
     }
     if (this.units.length > count) this.units.length = count;
 
     const ease = 1 - Math.exp(-12 * frameDt);
     const grow = 1 - Math.exp(-10 * frameDt);
-    const fireCycle = sim.fireRate * Math.PI * 2;
+    const recoilDecay = Math.exp(-RECOIL_DECAY * frameDt);
     const params = this.params.array as Float32Array;
-    const firing = sim.status === 'running' && sim.units > 0;
     for (let i = 0; i < count; i++) {
       const unit = this.units[i];
       if (!unit) continue;
@@ -112,11 +123,11 @@ export class SquadView {
       this.scaleVec.setScalar(unit.scale);
       this.matrix.compose(this.position, this.quaternion, this.scaleVec);
       this.mesh.setMatrixAt(i, this.matrix);
-      const recoil = firing ? Math.pow(Math.max(0, Math.sin(this.time * fireCycle + unit.phase * 3)), 16) : 0;
+      unit.recoil *= recoilDecay;
       params[i * 4] = unit.phase;
       params[i * 4 + 1] = GAIT_SPEED;
       params[i * 4 + 2] = 0;
-      params[i * 4 + 3] = recoil;
+      params[i * 4 + 3] = unit.recoil;
     }
     this.mesh.count = count;
     this.mesh.instanceMatrix.needsUpdate = true;

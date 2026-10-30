@@ -3,6 +3,7 @@ import { PROTOTYPE_LEVEL } from '../data/levels/prototype.ts';
 import { SIM_DT } from '../core/game-loop.ts';
 import type { LevelDef } from './level.ts';
 import { segmentCircleDistanceSq, Simulation } from './simulation.ts';
+import { DEFAULT_MODIFIERS } from './types.ts';
 
 const idle = { dragWorld: 0, axis: 0 };
 
@@ -14,6 +15,16 @@ function runToEnd(sim: Simulation, steer: (sim: Simulation) => number = () => 0,
 }
 
 describe('Simulation', () => {
+  it('fires from every soldier of a squad of seven', () => {
+    const sim = new Simulation(PROTOTYPE_LEVEL, { ...DEFAULT_MODIFIERS, startUnits: 7 });
+    const slots = new Set<number>();
+    for (let t = 0; t < 3; t += SIM_DT) {
+      sim.step(SIM_DT, idle);
+      for (const event of sim.drainEvents()) if (event.type === 'shot') slots.add(event.slot);
+    }
+    expect(slots.size).toBe(7);
+  });
+
   it('passes the gate the squad is aligned with', () => {
     const level: LevelDef = {
       id: 't',

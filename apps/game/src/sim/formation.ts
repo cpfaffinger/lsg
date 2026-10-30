@@ -46,6 +46,21 @@ export function squadDepth(count: number): number {
   return Math.max(0, rows - 1) * unitSpacing(count) + UNIT_RADIUS;
 }
 
+/**
+ * Step for walking through `count` slots so that every slot is hit exactly once per cycle and
+ * neighbours do not fire one after another. Coprime with `count`, close to the golden ratio.
+ */
+export function shooterStride(count: number): number {
+  if (count <= 2) return 1;
+  let stride = Math.max(1, Math.round(count * 0.618));
+  while (greatestCommonDivisor(stride, count) !== 1) stride--;
+  return stride;
+}
+
+function greatestCommonDivisor(a: number, b: number): number {
+  return b === 0 ? a : greatestCommonDivisor(b, a % b);
+}
+
 export interface SlotOffset {
   x: number;
   z: number;

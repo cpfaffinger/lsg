@@ -507,6 +507,7 @@ export class Game {
   }
 
   private render(alpha: number, frameDt: number): void {
+    this.world.squad.handleEvents(this.frameEvents);
     this.world.update(this.sim, alpha, frameDt);
     this.renderer.setScroll(this.sim.distance);
     const squadX = this.world.squad.centerX;

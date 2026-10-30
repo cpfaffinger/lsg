@@ -101,7 +101,7 @@ export interface Obstacle {
 export type LossCause = EnemyKind | 'projectile' | 'barrier' | 'barrel';
 
 export type SimEvent =
-  | { type: 'shot'; x: number; z: number; weapon: WeaponId }
+  | { type: 'shot'; x: number; z: number; weapon: WeaponId; slot: number }
   | { type: 'enemyHit'; id: number; x: number; z: number; damage: number; kind: EnemyKind }
   | {
       type: 'enemyKilled';

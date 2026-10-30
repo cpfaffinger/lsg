@@ -1,12 +1,5 @@
 import { BALANCE, ENEMIES, WEAPONS } from './balance.ts';
-import {
-  formationColumns,
-  formationRows,
-  formationSlot,
-  squadDepth,
-  squadHalfWidth,
-  type SlotOffset,
-} from './formation.ts';
+import { formationSlot, shooterStride, squadDepth, squadHalfWidth, type SlotOffset } from './formation.ts';
 import { addGateHits, applyGate, gateMaxValue, type GateSpec } from './gates.ts';
 import type { LevelDef, Segment, WaveGroup } from './level.ts';
 import { Rng } from './rng.ts';
@@ -201,14 +194,13 @@ export class Simulation {
     const damageScale = this.units / shooters;
     this.shotAccumulator += shooters * this.fireRate * dt;
     if (this.shotAccumulator >= 1) this.collectAimCandidates();
-    const cols = formationColumns(this.units);
-    const frontSlots = Math.min(shooters, cols * Math.min(3, formationRows(this.units)));
+    const stride = shooterStride(shooters);
     while (this.shotAccumulator >= 1) {
       this.shotAccumulator -= 1;
       if (this.projectiles.length >= MAX_PROJECTILES) continue;
-      const index = this.shooterCursor % Math.max(1, frontSlots);
-      this.shooterCursor = (this.shooterCursor + 7) % 9973;
-      formationSlot(index, this.units, this.slot);
+      const slot = this.shooterCursor % shooters;
+      this.shooterCursor = (slot + stride) % shooters;
+      formationSlot(slot, this.units, this.slot);
       const ox = this.squadX + this.slot.x;
       const oz = SQUAD_Z + this.slot.z - 0.6;
       const damage = this.damagePerShot * damageScale;
@@ -237,7 +229,7 @@ export class Simulation {
           alive: true,
         });
       }
-      this.emit({ type: 'shot', x: ox, z: oz, weapon: this.weapon });
+      this.emit({ type: 'shot', x: ox, z: oz, weapon: this.weapon, slot });
     }
   }
 
