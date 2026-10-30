@@ -5,7 +5,7 @@ import { buildServer } from './server.ts';
 
 describe('health endpoint', () => {
   it('reports ok with the current schema version', async () => {
-    const config = loadConfig({ LSG_DATA_DIR: '/tmp/lsg-test' });
+    const config = loadConfig({ LSG_DATA_DIR: '/tmp/lsg-test' }, { persistSecret: false });
     const db = openDatabase(':memory:');
     const app = await buildServer({ config, db });
     const response = await app.inject({ method: 'GET', url: '/api/healthz' });

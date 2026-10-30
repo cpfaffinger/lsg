@@ -13,6 +13,8 @@ const startedAt = Date.now();
 export async function buildServer({ config, db }: ServerDeps): Promise<FastifyInstance> {
   const app = Fastify({
     logger: config.isProduction ? { level: 'info' } : { level: 'warn' },
+    // Health checks run every 30 s; per-request logs would only add noise.
+    disableRequestLogging: true,
     trustProxy: false,
     bodyLimit: 512 * 1024,
   });

@@ -81,7 +81,9 @@ export const QUALITY_PRESETS: Record<QualityLevel, QualitySettings> = {
  * Heuristic first guess before the runtime benchmark refines it.
  * Phones and low-core devices start at "medium", desktops at "high".
  */
-export function detectInitialQuality(nav: Pick<Navigator, 'hardwareConcurrency' | 'userAgent'>): QualityLevel {
+export function detectInitialQuality(
+  nav: Pick<Navigator, 'hardwareConcurrency' | 'userAgent'>,
+): QualityLevel {
   const cores = nav.hardwareConcurrency || 4;
   const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(nav.userAgent);
   if (mobile) return cores >= 8 ? 'medium' : 'low';

@@ -63,7 +63,9 @@ export function formatNumber(value: number, options?: Intl.NumberFormatOptions):
 /** Compact large numbers for in-world labels: 12.5K, 3.2M. */
 export function formatCompact(value: number): string {
   if (Math.abs(value) < 10000) return formatNumber(Math.round(value));
-  return new Intl.NumberFormat(currentLocale, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+  return new Intl.NumberFormat(currentLocale, { notation: 'compact', maximumFractionDigits: 1 }).format(
+    value,
+  );
 }
 
 export function getLocale(): Locale {

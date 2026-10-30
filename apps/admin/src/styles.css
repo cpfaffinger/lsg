@@ -8,7 +8,11 @@
   --good: #36e27a;
   --bad: #ff4d5e;
   color-scheme: dark;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 body {

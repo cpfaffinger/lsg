@@ -6,6 +6,21 @@ Qualitätsziel: **High Polish** (hochwertige animierte PBR-Modelle, GPU-Partikel
 
 ---
 
+## Änderungsprotokoll während der Umsetzung
+
+Abweichungen vom ursprünglichen Plan, mit Begründung. Wo dieser Abschnitt und der Rest des Dokuments sich widersprechen, gilt dieser Abschnitt.
+
+| Datum | Meilenstein | Änderung | Grund |
+|-------|-------------|----------|-------|
+| 2026-10-30 | M0 | **SQLite statt PostgreSQL**; kein `db`-Container | PostgreSQL startet nicht mit Bind-Mount auf dem Windows-Laufwerk unter WSL (`could not change permissions`), Test in M0. SQLite (WAL) funktioniert dort, braucht keinen Container und keine native Abhängigkeit (`node:sqlite`). Für Konten und Spielstände mehr als ausreichend |
+| 2026-10-30 | M0 | **scrypt statt Argon2id** für Admin-Passwörter | Argon2 braucht native Module; scrypt ist in Node eingebaut und ebenfalls speicherhart |
+| 2026-10-30 | M0 | Kein ORM (Drizzle entfällt) | Wenige Tabellen; eigene Migrationen mit `PRAGMA user_version` |
+| 2026-10-30 | M0 | **Dev-Overlay** `docker-compose.dev.yml` statt Profilen; kein `docker-compose.prod.yml` | Die Basis-Compose-Datei ist direkt die Produktionskonfiguration; das Overlay ersetzt nur, was in der Entwicklung anders ist |
+| 2026-10-30 | M0 | API läuft direkt aus TypeScript (Node-Type-Stripping), kein Build-Schritt | Weniger Tooling, identischer Code in Dev und Prod |
+| 2026-10-30 | M0 | Geheimer Schlüssel wird bei Bedarf automatisch erzeugt (`./data/secret.key`) | Stack startet ohne Vorarbeit; Schlüssel wird mit dem Datenordner gesichert |
+| 2026-10-30 | M0 | Backups per SQLite `VACUUM INTO` aus der API nach `./data/backups` | Konsistente Schnappschüsse im laufenden Betrieb ohne Zusatzcontainer |
+| 2026-10-30 | M0 | Eigene schlanke i18n-Schicht statt `i18next` | Wenige Funktionen nötig (Schlüssel, Parameter, Pluralregeln über `Intl.PluralRules`); spart Bundle-Größe |
+
 ## 0. Getroffene Entscheidungen (2026-10-30)
 
 | Thema | Entscheidung |
@@ -56,15 +71,15 @@ Qualitätsziel: **High Polish** (hochwertige animierte PBR-Modelle, GPU-Partikel
 |--------------------|----------------------------------------|------------|
 | Laufzeit/Sprache   | **Node.js 24 + TypeScript**            | Gleiche Sprache wie das Spiel, geteilte Typen und Validierungs-Schemata |
 | Web-Framework      | **Fastify**                            | Schnell, schema-validiert (JSON Schema/TypeBox), gute Plugin-Welt (Cookies, Rate-Limit, Helmet) |
-| Datenbank          | **PostgreSQL 17**                      | Robust, als Compose-Service, JSONB für Spielstände |
-| ORM/Migrationen    | **Drizzle ORM** + `drizzle-kit`        | Typsicher, leichtgewichtig, SQL-nah, Migrationen im Repo |
+| Datenbank          | **SQLite** über das in Node 24 eingebaute `node:sqlite` (WAL-Modus), Datei in `./data/db/lsg.sqlite` | Ersetzt PostgreSQL (siehe Änderungsprotokoll): läuft im Bind-Mount auch auf Windows-Laufwerken unter WSL, kein DB-Container, keine native Abhängigkeit, Backup = eine Datei |
+| Migrationen        | Eigene, nummerierte SQL-Migrationen im Code, Stand in `PRAGMA user_version` | Kein ORM nötig für wenige Tabellen; volle Kontrolle |
 | Spieler-Login      | **Google OpenID Connect** via `openid-client` (PKCE, Authorization Code Flow) | Standardkonform, kein Passwort-System; Client-ID/Secret vom Admin konfigurierbar, verschlüsselt in der DB (AES-GCM, Schlüssel aus Umgebung) |
-| Sessions           | HTTP-only, Secure, SameSite-Cookies; serverseitige Sessions in PostgreSQL | Kein JWT-Handling im Browser, einfache Abmeldung/Sperrung |
-| Admin-Login        | Lokales Konto, **Argon2id**-Hash, optional **TOTP** (2FA), Rate-Limit, Audit-Log | Getrennt vom Spieler-Login, kein Google |
+| Sessions           | HTTP-only, Secure, SameSite-Cookies; serverseitige Sessions in SQLite | Kein JWT-Handling im Browser, einfache Abmeldung/Sperrung |
+| Admin-Login        | Lokales Konto, **scrypt**-Hash (Node-`crypto`, speicherhart, keine native Abhängigkeit), optional **TOTP** (2FA), Rate-Limit, Audit-Log | Getrennt vom Spieler-Login, kein Google |
 | Admin-UI           | Eigene kleine SPA unter `/admin` (Vite, TypeScript, gleiches Design-System) | Konfiguration, Spielerverwaltung, Status, Kennzahlen |
 | API-Vertrag        | REST + JSON, Schemata in `packages/shared` (TypeBox) | Ein Schema für Server-Validierung und Client-Typen |
 | Sicherheit         | Helmet-Header, CSRF-Schutz (SameSite + Origin-Check), Rate-Limits, Eingabe-Validierung, Secrets nur aus Umgebung/DB | Server ist öffentlich erreichbar |
-| Tests              | Vitest + Supertest, Testcontainer-Postgres | API-Tests mit echter DB |
+| Tests              | Vitest + Fastify `inject`, In-Memory-SQLite | API-Tests mit echter DB, ohne Container |
 
 ### 1.3 Container & Betrieb
 
@@ -85,12 +100,13 @@ Qualitätsziel: **High Polish** (hochwertige animierte PBR-Modelle, GPU-Partikel
 docker-compose.yml        (Basis, Dev-Standard)
 ├── web      nginx – Spiel (dist/), Admin-SPA, interne Weiterleitung /api; einziger exponierter Port :8080 (HTTP)
 ├── api      Fastify-Server :3000 (nur intern, nicht exponiert)
-├── db       PostgreSQL 17, Daten in ./data/db (Bind-Mount), Healthcheck
-├── dev      Vite-Dev-Server mit Hot Reload, Quellcode per Bind-Mount :5173 (nur lokal, Profil "dev")
-├── admin-dev Vite-Dev-Server der Admin-SPA :5174 (nur lokal, Profil "dev")
-└── tools    Blender headless + gltf-transform für die Asset-Pipeline (Profil "tools")
+    (SQLite-Datei in ./data/db, kein eigener DB-Container)
 
-docker-compose.prod.yml   (Overlay: fertige Images, Restart-Policy, Ressourcen-Limits; exponiert nur den HTTP-Port von web)
+docker-compose.dev.yml    (Overlay für Entwicklung)
+├── api       läuft aus Quellcode mit Auto-Reload
+├── web       deaktiviert
+├── game-dev  Vite-Dev-Server mit Hot Reload :5173
+└── admin-dev Vite-Dev-Server der Admin-SPA :5174
 ```
 
 - **Keine benannten Docker Volumes.** Jeder persistente Pfad ist ein Bind-Mount auf einen Ordner relativ zur Compose-Datei:

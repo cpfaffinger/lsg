@@ -1,0 +1,99 @@
+# LSG – Lane Shooting Game
+
+An ad-free, high-polish 3D lane shooter that runs entirely in the browser.
+Move your squad left and right, shoot upgrade gates, beat waves of enemies and bosses.
+No ads, no tracking, no real-money purchases.
+
+## Quick start (Docker Compose)
+
+Requirements: Docker Engine with Compose v2.24+ (on Windows: inside WSL).
+
+```bash
+cp .env.example .env        # optional, all values have defaults
+docker compose up -d --build
+```
+
+Open `http://localhost:8080` for the game and `http://localhost:8080/admin/` for the admin area.
+
+The stack exposes exactly **one plain HTTP port** (`LSG_HTTP_PORT`, default `8080`).
+TLS, certificates and the public reverse proxy (for example Cloudflare) are intentionally
+**not** part of this project. Point your proxy at this port.
+
+### Services
+
+| Service | Purpose                                                                       | Exposed              |
+| ------- | ----------------------------------------------------------------------------- | -------------------- |
+| `web`   | nginx: serves the game and the admin SPA, forwards `/api` to `api` internally | `LSG_HTTP_PORT` → 80 |
+| `api`   | Fastify backend: accounts, progress sync, admin API, SQLite database          | internal only        |
+
+### Data and backups
+
+All persistent data lives in `./data` next to `docker-compose.yml` (bind mount, no Docker volumes):
+
+| Path                 | Content                                                        |
+| -------------------- | -------------------------------------------------------------- |
+| `data/db/lsg.sqlite` | SQLite database (WAL mode)                                     |
+| `data/secret.key`    | Auto-generated encryption key (if `LSG_SECRET_KEY` is not set) |
+| `data/backups/`      | Database snapshots created by the API                          |
+| `data/logs/`         | Server logs                                                    |
+
+Back up by copying the whole `data` folder. For a guaranteed-consistent database file while the
+server runs, use the snapshots in `data/backups/` (created with SQLite `VACUUM INTO`).
+**Keep `secret.key` together with the database**: without it, stored secrets such as the Google
+client secret cannot be decrypted.
+
+### Running behind Cloudflare
+
+- Set the public URL in the admin area (Settings → Public URL), e.g. `https://lsg.example.com`.
+  Google sign-in redirect URLs and secure cookies are derived from it.
+- The real client IP is read from `CF-Connecting-IP` (`LSG_CLIENT_IP_HEADER`).
+  Only expose the HTTP port to Cloudflare / your proxy, otherwise this header can be spoofed.
+
+## Development
+
+### With Docker (hot reload)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+- Game: `http://localhost:5173`
+- Admin: `http://localhost:5174/admin/`
+
+Source folders are bind-mounted; file watching uses polling so it also works for projects on a
+Windows drive mounted into WSL.
+
+### Without Docker (Node 24+)
+
+```bash
+npm install
+npm run dev:api     # http://localhost:3000
+npm run dev:game    # http://localhost:5173
+npm run dev:admin   # http://localhost:5174/admin/
+```
+
+### Checks
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+## Repository layout
+
+```
+apps/game        Vite + Three.js game client
+apps/admin       Admin SPA (Preact), served under /admin
+apps/api         Fastify API, SQLite via node:sqlite
+packages/shared  Types and schemas shared by all apps
+docker/          Dockerfiles, nginx config, entrypoint
+docs/            Concept and roadmap (German)
+```
+
+## Conventions
+
+- All code, comments, identifiers and commit messages are in English.
+- English is the primary UI language; German is the second locale. No UI strings in code.
+- Every third-party asset is listed with its license in `docs/ASSETS.md`.

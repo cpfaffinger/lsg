@@ -59,7 +59,10 @@ body {
   padding: 4px 8px;
   border-radius: 6px;
   background: rgb(0 0 0 / 55%);
-  font: 12px/1.4 ui-monospace, Consolas, monospace;
+  font:
+    12px/1.4 ui-monospace,
+    Consolas,
+    monospace;
   white-space: pre;
 }
 

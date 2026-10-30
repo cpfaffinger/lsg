@@ -1,0 +1,62 @@
+# LSG development overrides with hot reload.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# Game:  http://localhost:5173
+# Admin: http://localhost:5174/admin/
+# The production web container is disabled in dev; the Vite servers proxy /api to the api container.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    image: lsg-dev:latest
+    container_name: lsg-api-dev
+    environment:
+      NODE_ENV: development
+      LSG_DATA_DIR: /data
+    entrypoint: ['/bin/sh', '/app/docker/api-entrypoint.sh']
+    command: ['npm', 'run', 'dev', '-w', '@lsg/api']
+    volumes:
+      - ./data:/data
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages/shared/src:/app/packages/shared/src
+
+  web:
+    profiles: ['production-only']
+
+  game-dev:
+    image: lsg-dev:latest
+    container_name: lsg-game-dev
+    depends_on:
+      - api
+    working_dir: /app/apps/game
+    command: ['npx', 'vite', '--host', '0.0.0.0']
+    environment:
+      LSG_API_PROXY_TARGET: http://api:3000
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./apps/game/src:/app/apps/game/src
+      - ./apps/game/public:/app/apps/game/public
+      - ./apps/game/index.html:/app/apps/game/index.html
+      - ./apps/game/vite.config.ts:/app/apps/game/vite.config.ts
+      - ./packages/shared/src:/app/packages/shared/src
+
+  admin-dev:
+    image: lsg-dev:latest
+    container_name: lsg-admin-dev
+    depends_on:
+      - api
+    working_dir: /app/apps/admin
+    command: ['npx', 'vite', '--host', '0.0.0.0']
+    environment:
+      LSG_API_PROXY_TARGET: http://api:3000
+    ports:
+      - '5174:5174'
+    volumes:
+      - ./apps/admin/src:/app/apps/admin/src
+      - ./apps/admin/index.html:/app/apps/admin/index.html
+      - ./apps/admin/vite.config.ts:/app/apps/admin/vite.config.ts
+      - ./packages/shared/src:/app/packages/shared/src
