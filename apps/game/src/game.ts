@@ -166,7 +166,10 @@ export class Game {
         this.audio.setMood('menu');
         this.hud.visible = false;
         this.loop.timeScale = 1;
-        this.prepareRun(this.mode);
+        // The menu shows the world of the level the player will play next.
+        this.prepareRun(
+          this.mode.kind === 'campaign' ? { kind: 'campaign', level: this.menuModel().nextLevel } : this.mode,
+        );
         this.showMenu('main');
       },
     });
@@ -216,6 +219,7 @@ export class Game {
           ? endlessLevel()
           : mode.level;
     this.sim = new Simulation(level, this.modifiers);
+    this.renderer.setWorld(level.world);
     this.resultShown = false;
     this.lastDistance = 0;
     this.frameEvents.length = 0;
@@ -427,6 +431,8 @@ export class Game {
 
   private vibrate(ms: number): void {
     if (!this.settings.get().haptics || !('vibrate' in navigator)) return;
+    // Browsers block vibration until the user has interacted with the page.
+    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
     const now = performance.now();
     if (now - this.lastVibration < 120) return;
     this.lastVibration = now;

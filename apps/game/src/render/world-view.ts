@@ -1,5 +1,6 @@
 import type { Scene } from 'three';
 import type { Simulation } from '../sim/simulation.ts';
+import { sharedAnimationUniforms } from './models/animated-material.ts';
 import { EnemyView } from './views/enemy-view.ts';
 import { GateView } from './views/gate-view.ts';
 import { ObstacleView } from './views/obstacle-view.ts';
@@ -23,6 +24,7 @@ export class WorldView {
   }
 
   update(sim: Simulation, alpha: number, frameDt: number): void {
+    sharedAnimationUniforms.uTime.value += frameDt;
     this.squad.update(sim, alpha, frameDt);
     this.enemies.update(sim, alpha, frameDt);
     this.projectiles.update(sim, alpha);

@@ -1,40 +1,62 @@
 import {
   ACESFilmicToneMapping,
   BoxGeometry,
-  CanvasTexture,
   Color,
   DirectionalLight,
+  EquirectangularReflectionMapping,
   Fog,
   HemisphereLight,
   Mesh,
   MeshStandardMaterial,
   PCFShadowMap,
   PlaneGeometry,
+  PMREMGenerator,
   RepeatWrapping,
   Scene,
   SRGBColorSpace,
+  TextureLoader,
+  Vector2,
   Vector3,
   WebGLRenderer,
+  type DataTexture,
+  type Texture,
 } from 'three';
+import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 import type { QualitySettings } from '../core/quality.ts';
+import type { WorldId } from '../sim/level.ts';
 import { LANE_HALF_WIDTH, LANE_WIDTH } from '../sim/world.ts';
 import { CameraRig } from './camera-rig.ts';
+import { Scenery } from './environment/scenery.ts';
+import { Sky } from './environment/sky.ts';
+import { THEMES, type WorldTheme } from './environment/themes.ts';
 
 const LANE_LENGTH = 320;
 const LANE_CENTER_Z = -LANE_LENGTH / 2 + 30;
-/** World units covered by one repetition of the lane texture. */
-const LANE_TILE = 8;
 
-/** Owns the WebGL renderer, the static scene (lane, lights) and the camera. */
+/** Owns the WebGL renderer, the static world (sky, lane, scenery, lights) and the camera. */
 export class SceneRenderer {
   readonly renderer: WebGLRenderer;
   readonly scene = new Scene();
   readonly rig = new CameraRig();
   private readonly sun: DirectionalLight;
+  private readonly hemi: HemisphereLight;
+  private readonly sky = new Sky();
+  private readonly scenery: Scenery;
+  private readonly laneMaterial: MeshStandardMaterial;
+  private readonly groundMaterial: MeshStandardMaterial;
+  private readonly edgeMaterial: MeshStandardMaterial;
+  private readonly pmrem: PMREMGenerator;
+  private readonly textureLoader = new TextureLoader();
+  private readonly hdrLoader = new HDRLoader();
+  private readonly textures = new Map<string, Promise<Texture>>();
+  private readonly environments = new Map<string, Promise<Texture>>();
   private quality: QualitySettings;
   private readonly canvas: HTMLCanvasElement;
-  private laneTexture: CanvasTexture | null = null;
   private readonly tmp = new Vector3();
+  private theme: WorldTheme = THEMES.desert;
+  private laneTileSize = 7;
+  /** Called after a world's assets finished loading (for loading indicators). */
+  onWorldReady: ((world: WorldId) => void) | null = null;
 
   constructor(canvas: HTMLCanvasElement, quality: QualitySettings) {
     this.canvas = canvas;
@@ -47,82 +69,146 @@ export class SceneRenderer {
     });
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.toneMapping = ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
     this.renderer.shadowMap.type = PCFShadowMap;
+    this.pmrem = new PMREMGenerator(this.renderer);
 
-    const sky = new Color(0x0b1020);
-    this.scene.background = sky;
-    this.scene.fog = new Fog(sky, 70, 170);
+    this.scene.fog = new Fog(0x000000, 60, 200);
+    this.scene.add(this.sky.mesh);
 
-    const hemi = new HemisphereLight(0xbcd4ff, 0x2a2238, 1.2);
-    this.scene.add(hemi);
-
-    this.sun = new DirectionalLight(0xfff1dd, 2.4);
-    this.sun.position.set(-8, 22, 12);
-    this.sun.target.position.set(0, 0, -8);
+    this.hemi = new HemisphereLight(0xffffff, 0x444444, 0.6);
+    this.scene.add(this.hemi);
+    this.sun = new DirectionalLight(0xffffff, 2.5);
     this.scene.add(this.sun, this.sun.target);
 
+    this.laneMaterial = new MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+    this.groundMaterial = new MeshStandardMaterial({ color: 0x777777, roughness: 1 });
+    this.edgeMaterial = new MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 2,
+    });
     this.buildLane();
+    this.scenery = new Scenery(this.scene);
     this.applyQuality(quality);
-  }
-
-  private createLaneTexture(): CanvasTexture {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#2b3245';
-      ctx.fillRect(0, 0, 256, 256);
-      // Subtle tiles and a centre dash give a sense of speed while scrolling.
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(0, 0, 256, 256);
-      ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      ctx.fillRect(122, 40, 12, 120);
-    }
-    const texture = new CanvasTexture(canvas);
-    texture.colorSpace = SRGBColorSpace;
-    texture.wrapS = texture.wrapT = RepeatWrapping;
-    texture.repeat.set(1, LANE_LENGTH / LANE_TILE);
-    texture.anisotropy = 8;
-    return texture;
+    this.setWorld('desert');
   }
 
   private buildLane(): void {
-    this.laneTexture = this.createLaneTexture();
-    const ground = new Mesh(
-      new PlaneGeometry(LANE_WIDTH, LANE_LENGTH),
-      new MeshStandardMaterial({ map: this.laneTexture, roughness: 0.85, metalness: 0.05 }),
-    );
+    const lane = new Mesh(new PlaneGeometry(LANE_WIDTH, LANE_LENGTH), this.laneMaterial);
+    lane.rotation.x = -Math.PI / 2;
+    lane.position.z = LANE_CENTER_Z;
+    lane.receiveShadow = true;
+    this.scene.add(lane);
+
+    const ground = new Mesh(new PlaneGeometry(400, LANE_LENGTH + 200), this.groundMaterial);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.z = LANE_CENTER_Z;
+    ground.position.set(0, -0.04, LANE_CENTER_Z - 60);
     ground.receiveShadow = true;
     this.scene.add(ground);
 
-    const surroundings = new Mesh(
-      new PlaneGeometry(220, LANE_LENGTH),
-      new MeshStandardMaterial({ color: 0x151a28, roughness: 1 }),
-    );
-    surroundings.rotation.x = -Math.PI / 2;
-    surroundings.position.set(0, -0.05, LANE_CENTER_Z);
-    this.scene.add(surroundings);
-
-    const edgeMaterial = new MeshStandardMaterial({
-      color: 0x6ad1ff,
-      emissive: 0x2a8cff,
-      emissiveIntensity: 1.4,
-    });
     for (const side of [-1, 1]) {
-      const edge = new Mesh(new BoxGeometry(0.25, 0.3, LANE_LENGTH), edgeMaterial);
-      edge.position.set(side * (LANE_HALF_WIDTH + 0.125), 0.15, LANE_CENTER_Z);
-      this.scene.add(edge);
+      const curb = new Mesh(
+        new BoxGeometry(0.5, 0.22, LANE_LENGTH),
+        new MeshStandardMaterial({ color: 0x3a3f4c, roughness: 0.6, metalness: 0.4 }),
+      );
+      curb.position.set(side * (LANE_HALF_WIDTH + 0.25), 0.11, LANE_CENTER_Z);
+      curb.receiveShadow = true;
+      this.scene.add(curb);
+      const glow = new Mesh(new BoxGeometry(0.12, 0.06, LANE_LENGTH), this.edgeMaterial);
+      glow.position.set(side * (LANE_HALF_WIDTH + 0.06), 0.24, LANE_CENTER_Z);
+      this.scene.add(glow);
     }
   }
 
-  /** Scrolls the lane texture to match the distance travelled. */
+  private loadTexture(url: string, srgb: boolean): Promise<Texture> {
+    let promise = this.textures.get(url);
+    if (!promise) {
+      promise = this.textureLoader.loadAsync(url).then((texture) => {
+        texture.wrapS = texture.wrapT = RepeatWrapping;
+        texture.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+        if (srgb) texture.colorSpace = SRGBColorSpace;
+        return texture;
+      });
+      this.textures.set(url, promise);
+    }
+    return promise;
+  }
+
+  private loadEnvironment(url: string): Promise<Texture> {
+    let promise = this.environments.get(url);
+    if (!promise) {
+      promise = this.hdrLoader.loadAsync(url).then((hdr: DataTexture) => {
+        hdr.mapping = EquirectangularReflectionMapping;
+        const env = this.pmrem.fromEquirectangular(hdr).texture;
+        hdr.dispose();
+        return env;
+      });
+      this.environments.set(url, promise);
+    }
+    return promise;
+  }
+
+  get world(): WorldId {
+    return this.theme.id;
+  }
+
+  /** Switches the visual theme. Assets load in the background; colours apply immediately. */
+  setWorld(world: WorldId): void {
+    const theme = THEMES[world];
+    this.theme = theme;
+    this.sky.apply(theme);
+    const fog = this.scene.fog as Fog;
+    fog.color.setHex(theme.fog.color);
+    fog.near = theme.fog.near;
+    fog.far = theme.fog.far;
+    this.sun.color.setHex(theme.sun.color);
+    this.sun.intensity = theme.sun.intensity;
+    this.sun.position.set(...theme.sun.direction).multiplyScalar(40);
+    this.sun.target.position.set(0, 0, -12);
+    this.sun.position.add(this.sun.target.position);
+    this.hemi.color.setHex(theme.hemisphere.sky);
+    this.hemi.groundColor.setHex(theme.hemisphere.ground);
+    this.hemi.intensity = theme.hemisphere.intensity;
+    this.renderer.toneMappingExposure = theme.exposure;
+    this.groundMaterial.color.setHex(theme.ground.color);
+    this.groundMaterial.roughness = theme.ground.roughness;
+    this.edgeMaterial.color.setHex(theme.edge.color);
+    this.edgeMaterial.emissive.setHex(theme.edge.color);
+    this.edgeMaterial.emissiveIntensity = theme.edge.glow;
+    this.laneMaterial.color.set(new Color(theme.lane.tint));
+    this.laneMaterial.roughness = theme.lane.roughness;
+    this.laneMaterial.metalness = theme.lane.metalness;
+    this.laneTileSize = theme.lane.tileSize;
+    this.scenery.setWorld(world);
+
+    const textures = Promise.all([
+      this.loadTexture(theme.lane.diffuse, true),
+      this.loadTexture(theme.lane.normal, false),
+    ]).then(([diffuse, normal]) => {
+      if (this.theme !== theme) return;
+      for (const t of [diffuse, normal])
+        t.repeat.set(LANE_WIDTH / theme.lane.tileSize, LANE_LENGTH / theme.lane.tileSize);
+      this.laneMaterial.map = diffuse;
+      this.laneMaterial.normalMap = normal;
+      this.laneMaterial.normalScale = new Vector2(theme.lane.normalScale, theme.lane.normalScale);
+      this.laneMaterial.needsUpdate = true;
+    });
+    const environment = this.loadEnvironment(theme.environment.hdri).then((env) => {
+      if (this.theme !== theme) return;
+      this.scene.environment = env;
+      this.scene.environmentIntensity = theme.environment.intensity;
+    });
+    Promise.all([textures, environment])
+      .then(() => this.onWorldReady?.(world))
+      .catch((error: unknown) => console.warn('World assets failed to load', error));
+  }
+
+  /** Scrolls lane texture and scenery to match the distance travelled. */
   setScroll(distance: number): void {
-    if (this.laneTexture) this.laneTexture.offset.y = (distance / LANE_TILE) % 1;
+    const offset = (distance / this.laneTileSize) % 1;
+    if (this.laneMaterial.map) this.laneMaterial.map.offset.y = offset;
+    if (this.laneMaterial.normalMap) this.laneMaterial.normalMap.offset.y = offset;
+    this.scenery.update(distance);
   }
 
   applyQuality(quality: QualitySettings): void {
@@ -132,14 +218,15 @@ export class SceneRenderer {
     this.renderer.shadowMap.enabled = quality.shadows;
     this.sun.castShadow = quality.shadows;
     this.sun.shadow.mapSize.set(quality.shadowMapSize, quality.shadowMapSize);
-    this.sun.shadow.bias = -0.0005;
+    this.sun.shadow.bias = -0.0004;
+    this.sun.shadow.normalBias = 0.02;
     const cam = this.sun.shadow.camera;
-    cam.left = -14;
-    cam.right = 14;
-    cam.top = 40;
-    cam.bottom = -20;
+    cam.left = -16;
+    cam.right = 16;
+    cam.top = 36;
+    cam.bottom = -24;
     cam.near = 1;
-    cam.far = 90;
+    cam.far = 120;
     cam.updateProjectionMatrix();
     this.sun.shadow.map?.dispose();
     this.sun.shadow.map = null;
@@ -174,6 +261,7 @@ export class SceneRenderer {
 
   render(frameDt: number, shake: boolean): void {
     this.rig.update(frameDt, shake);
+    this.sky.update(this.rig.camera.position, frameDt);
     this.renderer.render(this.scene, this.rig.camera);
   }
 
