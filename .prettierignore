@@ -1,0 +1,9 @@
+dist
+node_modules
+data
+coverage
+package-lock.json
+assets-src
+docs
+*.glb
+*.ktx2

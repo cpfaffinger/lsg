@@ -1,0 +1,21 @@
+{
+  "name": "@lsg/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon --legacy-watch --watch src --watch ../../packages/shared/src --ext ts,json --exec \"node src/main.ts\"",
+    "start": "node src/main.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/rate-limit": "^11.2.1",
+    "@lsg/shared": "0.1.0",
+    "fastify": "^5.12.7",
+    "jose": "^6.2.14"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

@@ -1,0 +1,13 @@
+# Normalize all text files to LF so they work unchanged inside Linux containers.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.webp binary
+*.glb binary
+*.ktx2 binary
+*.ogg binary
+*.mp3 binary
+*.wav binary
+*.hdr binary
+*.woff2 binary

@@ -1,0 +1,18 @@
+{
+  "app": {
+    "title": "LSG",
+    "tagline": "Lane Shooting Game",
+    "loading": "Loading…",
+    "tapToStart": "Drag to move · Tap to start"
+  },
+  "debug": {
+    "fps": "{fps} FPS",
+    "quality": "Quality: {level}"
+  },
+  "quality": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "ultra": "Ultra"
+  }
+}

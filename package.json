@@ -1,0 +1,38 @@
+{
+  "name": "lsg",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LSG - Lane Shooting Game. Ad-free high-polish 3D lane shooter for the browser.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:game": "npm run dev -w @lsg/game",
+    "dev:admin": "npm run dev -w @lsg/admin",
+    "dev:api": "npm run dev -w @lsg/api",
+    "build": "npm run build -w @lsg/game && npm run build -w @lsg/admin",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.5"
+  }
+}
