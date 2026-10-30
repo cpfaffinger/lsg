@@ -65,7 +65,8 @@ export function loadConfig(
   env: NodeJS.ProcessEnv = process.env,
   options = { persistSecret: true },
 ): AppConfig {
-  const dataDir = path.resolve(env.LSG_DATA_DIR ?? './data');
+  // Default: <repo>/data, the same folder docker-compose.yml bind-mounts into the container.
+  const dataDir = path.resolve(env.LSG_DATA_DIR ?? path.join(import.meta.dirname, '..', '..', '..', 'data'));
   const isProduction = env.NODE_ENV === 'production';
   const secretKey = resolveSecretKey(env.LSG_SECRET_KEY, dataDir, options.persistSecret);
   return {

@@ -104,7 +104,9 @@ export function registerAdminRoutes(app: FastifyInstance, ctx: AppContext, backu
     const lastBackup = backups.list()[0] ?? null;
     if (!lastBackup) warnings.push('no_backup');
     // In-memory databases (tests) have no file; report 0 bytes then.
-    const databaseBytes = fs.existsSync(ctx.config.databaseFile) ? fs.statSync(ctx.config.databaseFile).size : 0;
+    const databaseBytes = fs.existsSync(ctx.config.databaseFile)
+      ? fs.statSync(ctx.config.databaseFile).size
+      : 0;
     return {
       version: ctx.config.version,
       nodeVersion: process.version,

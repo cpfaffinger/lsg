@@ -38,9 +38,9 @@ export async function buildServer({
   const backups = new BackupService(db, config.backupDir);
 
   const app = Fastify({
-    logger: config.isProduction ? { level: 'info' } : { level: 'warn' },
-    // Health checks run every 30 s; per-request logs would only add noise.
-    disableRequestLogging: true,
+    // Request logs (info level) would only add noise, e.g. health checks every 30 s.
+    // Warnings and errors still reach the container log.
+    logger: { level: 'warn' },
     // Proxy headers are evaluated explicitly (see http/request-info.ts), never implicitly.
     trustProxy: false,
     bodyLimit: 512 * 1024,
