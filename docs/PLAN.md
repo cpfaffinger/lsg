@@ -20,6 +20,13 @@ Abweichungen vom ursprünglichen Plan, mit Begründung. Wo dieser Abschnitt und 
 | 2026-10-30 | M0 | Geheimer Schlüssel wird bei Bedarf automatisch erzeugt (`./data/secret.key`) | Stack startet ohne Vorarbeit; Schlüssel wird mit dem Datenordner gesichert |
 | 2026-10-30 | M0 | Backups per SQLite `VACUUM INTO` aus der API nach `./data/backups` | Konsistente Schnappschüsse im laufenden Betrieb ohne Zusatzcontainer |
 | 2026-10-30 | M0 | Eigene schlanke i18n-Schicht statt `i18next` | Wenige Funktionen nötig (Schlüssel, Parameter, Pluralregeln über `Intl.PluralRules`); spart Bundle-Größe |
+| 2026-10-30 | M1 | **Tore steigen pro Treffer**, nicht pro Schaden; Kosten pro Stufe wachsen mit dem Wert | Mit Schaden als Maß waren Tore bei großen Truppen sofort maximal; so bleiben sie spannend |
+| 2026-10-30 | M1 | **Zielerfassung** für nahe Gegner (Kegel vor der Truppe, Fernkämpfer bevorzugt); weiter entfernt wird geradeaus geschossen | Ohne Zielerfassung liefen Gegner am Feuer vorbei; geradeaus schießen auf Distanz sorgt dafür, dass Tore beschossen werden |
+| 2026-10-30 | M1 | Große Truppen stehen dichter, Kamera folgt der Truppentiefe | Sonst ragten große Truppen aus dem Bild |
+| 2026-10-30 | M3 | Schildträger blocken frontale Gewehr- und Laserschüsse; Streuschuss, Raketen und seitliche Treffer umgehen den Schild | Klare, lesbare Regel, die zum Positionsspiel und Waffenwechsel motiviert |
+| 2026-10-30 | M3 | **Kampagne aus einem Levelgenerator** statt 30 handgebauter JSON-Dateien; pro Level wird eine neue Mechanik vorgestellt | Konsistente Qualität, deterministisch, leicht erweiterbar |
+| 2026-10-30 | M3 | **Automatische Kalibrierung** (`tools/balance/tune.ts`): Schwierigkeit pro Level und Boss-Lebensenergie werden gegen drei Bot-Varianten gesucht | Handbalancing war zu sprunghaft; Ergebnis: guter Bot 30/30, durchschnittlicher 25/30, schwacher 18/30 |
+| 2026-10-30 | M3 | Tägliche Herausforderung bleibt optional (M9) | Endlos-Modus deckt den Wiederspielwert für 1.0 ab |
 
 ## 0. Getroffene Entscheidungen (2026-10-30)
 
