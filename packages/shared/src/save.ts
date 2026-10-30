@@ -18,6 +18,11 @@ export const UPGRADE_MAX_LEVEL: Record<UpgradeId, number> = {
   speed: 5,
 };
 
+export const WEAPON_IDS = ['rifle', 'spread', 'laser', 'rocket'] as const;
+export type WeaponId = (typeof WEAPON_IDS)[number];
+/** Every player owns this weapon. */
+export const DEFAULT_WEAPON: WeaponId = 'rifle';
+
 export interface LevelRecord {
   stars: number;
   bestUnits: number;
@@ -42,6 +47,8 @@ export interface SaveData {
   levels: Record<string, LevelRecord>;
   endlessBest: number;
   cosmetics: { owned: string[]; selected: string };
+  /** Weapons bought in the shop; `selected` is what the squad starts a run with. */
+  weapons: { owned: WeaponId[]; selected: WeaponId };
   stats: SaveStats;
   /** ISO timestamp of the last change. */
   updatedAt: string;
@@ -59,6 +66,7 @@ export function createEmptySave(now = new Date()): SaveData {
     levels: {},
     endlessBest: 0,
     cosmetics: { owned: [DEFAULT_COSMETIC], selected: DEFAULT_COSMETIC },
+    weapons: { owned: [DEFAULT_WEAPON], selected: DEFAULT_WEAPON },
     stats: { runs: 0, wins: 0, kills: 0, playSeconds: 0 },
     updatedAt: now.toISOString(),
   };
@@ -69,6 +77,10 @@ const COSMETIC_ID = /^[a-z0-9-]{1,32}$/;
 function int(value: unknown, min: number, max: number, fallback = min): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
   return Math.min(max, Math.max(min, Math.floor(value)));
+}
+
+function isWeaponId(value: unknown): value is WeaponId {
+  return WEAPON_IDS.includes(value as WeaponId);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -110,6 +122,13 @@ export function sanitizeSave(input: unknown): SaveData {
     const selected = input.cosmetics.selected;
     save.cosmetics.selected =
       typeof selected === 'string' && save.cosmetics.owned.includes(selected) ? selected : DEFAULT_COSMETIC;
+  }
+  if (isRecord(input.weapons)) {
+    const owned = Array.isArray(input.weapons.owned) ? input.weapons.owned.filter(isWeaponId) : [];
+    save.weapons.owned = WEAPON_IDS.filter((id) => id === DEFAULT_WEAPON || owned.includes(id));
+    const selected = input.weapons.selected;
+    save.weapons.selected =
+      isWeaponId(selected) && save.weapons.owned.includes(selected) ? selected : DEFAULT_WEAPON;
   }
   if (isRecord(input.stats)) {
     save.stats = {
@@ -170,6 +189,10 @@ export function mergeSaves(a: SaveData, b: SaveData, mode: MergeMode): SaveData 
   }
   merged.cosmetics.owned = Array.from(new Set([...a.cosmetics.owned, ...b.cosmetics.owned]));
   merged.cosmetics.selected = newer.cosmetics.selected;
+  merged.weapons.owned = WEAPON_IDS.filter(
+    (id) => a.weapons.owned.includes(id) || b.weapons.owned.includes(id),
+  );
+  merged.weapons.selected = newer.weapons.selected;
   merged.stats = {
     runs: Math.max(a.stats.runs, b.stats.runs),
     wins: Math.max(a.stats.wins, b.stats.wins),

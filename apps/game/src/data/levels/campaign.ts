@@ -9,18 +9,18 @@ export const LEVELS_PER_WORLD = 10;
 /** Level at which each mechanic is introduced. The level that unlocks it showcases it. */
 export const FEATURE_UNLOCKS: { level: number; feature: Feature }[] = [
   { level: 2, feature: 'factor' },
-  { level: 3, feature: 'tank' },
+  { level: 3, feature: 'spread' },
   { level: 4, feature: 'percent' },
+  { level: 4, feature: 'tank' },
   { level: 5, feature: 'barrel' },
   { level: 5, feature: 'miniboss' },
   { level: 6, feature: 'shooter' },
-  { level: 7, feature: 'spread' },
+  { level: 7, feature: 'laser' },
   { level: 8, feature: 'splitter' },
   { level: 9, feature: 'barrier' },
   { level: 10, feature: 'boss' },
+  { level: 11, feature: 'rocket' },
   { level: 12, feature: 'shield' },
-  { level: 13, feature: 'laser' },
-  { level: 17, feature: 'rocket' },
 ];
 
 export function worldOf(levelNumber: number): WorldId {

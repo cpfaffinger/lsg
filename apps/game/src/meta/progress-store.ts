@@ -1,8 +1,8 @@
-import { createEmptySave, sanitizeSave, type SaveData, type UpgradeId } from '@lsg/shared';
+import { createEmptySave, sanitizeSave, type SaveData, type UpgradeId, type WeaponId } from '@lsg/shared';
 import { get, set } from 'idb-keyval';
 import type { RunStats } from '../sim/types.ts';
 import { cosmeticById } from './cosmetics.ts';
-import { rewardFor, upgradeCost, type RunReward } from './economy.ts';
+import { rewardFor, upgradeCost, WEAPON_PRICES, type RunReward } from './economy.ts';
 
 const IDB_KEY = 'lsg.save.v1';
 const LS_KEY = 'lsg.save.v1';
@@ -146,6 +146,24 @@ export class ProgressStore {
     if (!this.save.cosmetics.owned.includes(id)) return;
     this.mutate((save) => {
       save.cosmetics.selected = id;
+    });
+  }
+
+  buyWeapon(id: WeaponId): boolean {
+    const cost = WEAPON_PRICES[id];
+    if (this.save.weapons.owned.includes(id) || this.save.coins < cost) return false;
+    this.mutate((save) => {
+      save.coins -= cost;
+      save.weapons.owned.push(id);
+      save.weapons.selected = id;
+    });
+    return true;
+  }
+
+  selectWeapon(id: WeaponId): void {
+    if (!this.save.weapons.owned.includes(id)) return;
+    this.mutate((save) => {
+      save.weapons.selected = id;
     });
   }
 

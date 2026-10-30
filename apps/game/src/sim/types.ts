@@ -1,4 +1,6 @@
-export type WeaponId = 'rifle' | 'spread' | 'laser' | 'rocket';
+import type { WeaponId } from '@lsg/shared';
+
+export type { WeaponId };
 
 export type EnemyKind = 'runner' | 'tank' | 'shooter' | 'splitter' | 'shield' | 'miniboss' | 'boss';
 
@@ -142,6 +144,8 @@ export interface RunModifiers {
   fireRateMultiplier: number;
   moveSpeedMultiplier: number;
   coinMultiplier: number;
+  /** Weapon the squad starts with; rifle when omitted. */
+  startWeapon?: WeaponId;
 }
 
 export const DEFAULT_MODIFIERS: RunModifiers = {

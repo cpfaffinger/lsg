@@ -96,6 +96,7 @@ export class Simulation {
     this.modifiers = modifiers;
     this.rng = new Rng(level.seed);
     this.units = Math.max(1, Math.round(modifiers.startUnits));
+    this.weapon = modifiers.startWeapon ?? this.weapon;
     this.stats.peakUnits = this.units;
     this.segments = [...level.segments].sort((a, b) => a.at - b.at);
   }

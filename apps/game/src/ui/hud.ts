@@ -16,6 +16,8 @@ export class Hud {
   private readonly bossFill: HTMLDivElement;
   private readonly bossName: HTMLSpanElement;
   private readonly comboBox: HTMLDivElement;
+  private readonly weaponBadge: HTMLDivElement;
+  private lastWeapon = '';
   private lastCombo = 0;
   private readonly labels: HTMLDivElement[] = [];
   private readonly projected = { x: 0, y: 0, visible: false };
@@ -50,6 +52,7 @@ export class Hud {
     this.bossBar.append(this.bossName, bossTrack);
     this.bossBar.hidden = true;
 
+    this.weaponBadge = el('div', 'hud-weapon');
     this.comboBox = el('div', 'hud-combo');
     this.comboBox.hidden = true;
     this.squadBadge = el('div', 'squad-badge');
@@ -59,7 +62,7 @@ export class Hud {
       this.labels.push(label);
       this.root.appendChild(label);
     }
-    this.root.append(top, this.bossBar, this.comboBox, this.squadBadge);
+    this.root.append(top, this.bossBar, this.weaponBadge, this.comboBox, this.squadBadge);
     parent.appendChild(this.root);
     this.refreshTexts();
   }
@@ -124,6 +127,14 @@ export class Hud {
     }
 
     this.updateCombo(sim.combo);
+    if (sim.weapon !== this.lastWeapon) {
+      this.lastWeapon = sim.weapon;
+      this.weaponBadge.textContent = t(`weapon.${sim.weapon}`);
+      this.weaponBadge.dataset.weapon = sim.weapon;
+      this.weaponBadge.classList.remove('changed');
+      void this.weaponBadge.offsetWidth;
+      this.weaponBadge.classList.add('changed');
+    }
 
     renderer.project(squadX, 2.1, SQUAD_Z, this.projected);
     this.squadBadge.style.transform = `translate3d(${this.projected.x.toFixed(1)}px, ${this.projected.y.toFixed(1)}px, 0) translate(-50%, -100%)`;

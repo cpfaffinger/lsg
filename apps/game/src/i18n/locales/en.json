@@ -38,6 +38,13 @@
     "title": "Shop",
     "upgrades": "Upgrades",
     "skins": "Skins",
+    "weapons": "Weapons",
+    "weaponInfo": {
+      "rifle": "Your squad's reliable standard weapon.",
+      "spread": "Three pellets per shot at short range.",
+      "laser": "Fast beam that pierces several enemies.",
+      "rocket": "Slow rockets with a big explosion."
+    },
     "maxed": "Max",
     "buy": "Buy",
     "owned": "Owned",

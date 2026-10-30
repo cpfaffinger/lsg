@@ -151,6 +151,36 @@ body {
   text-shadow: 0 2px 6px rgb(0 0 0 / 70%);
 }
 
+.hud-weapon {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 58px);
+  left: calc(env(safe-area-inset-left) + 14px);
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: rgb(10 16 32 / 70%);
+  border-left: 4px solid #ffd84a;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.hud-weapon[data-weapon='spread'] {
+  border-left-color: #ff9a3c;
+}
+
+.hud-weapon[data-weapon='laser'] {
+  border-left-color: #36f5ff;
+}
+
+.hud-weapon[data-weapon='rocket'] {
+  border-left-color: #ff4d5e;
+}
+
+.hud-weapon.changed {
+  animation: combo-pop 0.45s ease-out;
+}
+
 .hud-combo {
   position: absolute;
   top: calc(env(safe-area-inset-top) + 108px);

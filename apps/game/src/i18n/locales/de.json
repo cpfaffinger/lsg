@@ -38,6 +38,13 @@
     "title": "Shop",
     "upgrades": "Upgrades",
     "skins": "Skins",
+    "weapons": "Waffen",
+    "weaponInfo": {
+      "rifle": "Das verlässliche Standardgewehr deiner Truppe.",
+      "spread": "Drei Kugeln pro Schuss auf kurze Distanz.",
+      "laser": "Schneller Strahl, der mehrere Gegner durchschlägt.",
+      "rocket": "Langsame Raketen mit großer Explosion."
+    },
     "maxed": "Max",
     "buy": "Kaufen",
     "owned": "Besitzt du",

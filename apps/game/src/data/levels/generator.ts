@@ -147,7 +147,7 @@ function chooseGates(rng: Rng, params: GeneratorParams, plan: Plan, beat: number
         ? (params.spotlight as WeaponId)
         : null;
     options.push({
-      weight: spotlightWeapon && beat === 1 ? 50 : 1,
+      weight: spotlightWeapon && beat === 1 ? 50 : 2.4,
       build: () => [
         { op: 'weapon', value: 0, weapon: spotlightWeapon ?? rng.pick(weapons) },
         { op: 'units', value: good() },

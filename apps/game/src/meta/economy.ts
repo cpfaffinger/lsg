@@ -1,4 +1,4 @@
-import { UPGRADE_MAX_LEVEL, type SaveData, type UpgradeId } from '@lsg/shared';
+import { UPGRADE_MAX_LEVEL, type SaveData, type UpgradeId, type WeaponId } from '@lsg/shared';
 import { DEFAULT_MODIFIERS, type RunModifiers, type RunStats } from '../sim/types.ts';
 
 export interface UpgradeDef {
@@ -55,6 +55,14 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
   },
 };
 
+/** Coin price of a permanent start weapon; gates still hand out every weapon for free. */
+export const WEAPON_PRICES: Record<WeaponId, number> = {
+  rifle: 0,
+  spread: 300,
+  laser: 900,
+  rocket: 1800,
+};
+
 export function upgradeCost(id: UpgradeId, currentLevel: number): number | null {
   const def = UPGRADES[id];
   if (currentLevel >= def.maxLevel) return null;
@@ -70,6 +78,7 @@ export function modifiersFor(save: SaveData): RunModifiers {
     fireRateMultiplier: 1 + (u.fireRate * UPGRADES.fireRate.perLevel) / 100,
     moveSpeedMultiplier: 1 + (u.speed * UPGRADES.speed.perLevel) / 100,
     coinMultiplier: 1 + (u.coins * UPGRADES.coins.perLevel) / 100,
+    startWeapon: save.weapons.selected,
   };
 }
 

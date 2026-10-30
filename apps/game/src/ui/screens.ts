@@ -1,12 +1,22 @@
-import { SUPPORTED_LOCALES, UPGRADE_IDS, type Locale, type SaveData, type UpgradeId } from '@lsg/shared';
+import {
+  SUPPORTED_LOCALES,
+  UPGRADE_IDS,
+  WEAPON_IDS,
+  type Locale,
+  type SaveData,
+  type UpgradeId,
+  type WeaponId,
+} from '@lsg/shared';
 import type { QualityLevel } from '../core/quality.ts';
 import type { Settings } from '../core/settings.ts';
 import { formatNumber, t } from '../i18n/i18n.ts';
 import { COSMETICS } from '../meta/cosmetics.ts';
-import { UPGRADES, upgradeCost, type RunReward } from '../meta/economy.ts';
+import { UPGRADES, upgradeCost, WEAPON_PRICES, type RunReward } from '../meta/economy.ts';
 import type { WorldId } from '../sim/level.ts';
 import type { RunStats } from '../sim/types.ts';
 import { button, h, hexColor } from './dom.ts';
+
+export type ShopTab = 'upgrades' | 'weapons' | 'skins';
 
 export interface LevelTile {
   number: number;
@@ -226,12 +236,14 @@ export class Screens {
 
   showShop(
     model: MenuModel,
-    tab: 'upgrades' | 'skins',
+    tab: ShopTab,
     handlers: {
       buyUpgrade: (id: UpgradeId) => void;
+      buyWeapon: (id: WeaponId) => void;
+      selectWeapon: (id: WeaponId) => void;
       buySkin: (id: string) => void;
       selectSkin: (id: string) => void;
-      tab: (tab: 'upgrades' | 'skins') => void;
+      tab: (tab: ShopTab) => void;
       back: () => void;
     },
   ): void {
@@ -239,6 +251,7 @@ export class Screens {
       'div',
       { class: 'tabs', attrs: { role: 'tablist' } },
       button(t('shop.upgrades'), () => handlers.tab('upgrades'), `tab ${tab === 'upgrades' ? 'active' : ''}`),
+      button(t('shop.weapons'), () => handlers.tab('weapons'), `tab ${tab === 'weapons' ? 'active' : ''}`),
       button(t('shop.skins'), () => handlers.tab('skins'), `tab ${tab === 'skins' ? 'active' : ''}`),
     );
     let body: HTMLElement;
@@ -279,6 +292,37 @@ export class Screens {
               h('div', { class: 'shop-level', text: t('shop.level', { level, max: def.maxLevel }) }),
             ),
             buy,
+          ),
+        );
+      }
+    } else if (tab === 'weapons') {
+      body = h('div', { class: 'shop-list' });
+      for (const id of WEAPON_IDS) {
+        const owned = model.save.weapons.owned.includes(id);
+        let action: HTMLElement;
+        if (model.save.weapons.selected === id) {
+          action = h('span', { class: 'skin-state', text: t('shop.selected') });
+        } else if (owned) {
+          action = button(t('shop.select'), () => handlers.selectWeapon(id), 'btn small');
+        } else {
+          const cost = WEAPON_PRICES[id];
+          const ok = model.save.coins >= cost;
+          const buy = button('', () => handlers.buyWeapon(id), `btn small ${ok ? 'primary' : ''}`);
+          buy.append(h('span', { class: 'coin-icon' }), formatNumber(cost));
+          buy.disabled = !ok;
+          action = buy;
+        }
+        body.append(
+          h(
+            'div',
+            { class: 'shop-row' },
+            h(
+              'div',
+              { class: 'shop-info' },
+              h('div', { class: 'shop-name', text: t(`weapon.${id}`) }),
+              h('div', { class: 'shop-effect', text: t(`shop.weaponInfo.${id}`) }),
+            ),
+            action,
           ),
         );
       }

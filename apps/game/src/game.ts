@@ -33,7 +33,7 @@ import { Simulation } from './sim/simulation.ts';
 import { DEFAULT_MODIFIERS, type RunModifiers, type SimEvent } from './sim/types.ts';
 import { DebugOverlay } from './ui/debug-overlay.ts';
 import { Hud } from './ui/hud.ts';
-import { Screens, type LevelTile, type MenuModel } from './ui/screens.ts';
+import { Screens, type LevelTile, type MenuModel, type ShopTab } from './ui/screens.ts';
 
 type RunMode =
   { kind: 'campaign'; level: number } | { kind: 'endless' } | { kind: 'custom'; level: LevelDef };
@@ -63,7 +63,7 @@ export class Game {
   private readonly frameEvents: SimEvent[] = [];
   private lastDistance = 0;
   private menuPage: MenuPage = 'main';
-  private shopTab: 'upgrades' | 'skins' = 'upgrades';
+  private shopTab: ShopTab = 'upgrades';
   /** Re-renders whatever overlay is open (after a language change or a purchase). */
   private refreshScreen: (() => void) | null = null;
   private lastVibration = 0;
@@ -417,6 +417,14 @@ export class Game {
           this.screens.showShop(model, this.shopTab, {
             buyUpgrade: (id: UpgradeId) => {
               if (this.progress.buyUpgrade(id)) this.audio.play('coin', { volume: 0.6, jitter: 0 });
+              render();
+            },
+            buyWeapon: (id) => {
+              if (this.progress.buyWeapon(id)) this.audio.play('gateGood', { volume: 0.5, jitter: 0 });
+              render();
+            },
+            selectWeapon: (id) => {
+              this.progress.selectWeapon(id);
               render();
             },
             buySkin: (id) => {
