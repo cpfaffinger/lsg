@@ -15,7 +15,8 @@
     "back": "Back",
     "stars": "{count} stars",
     "endlessBest": "Best: {distance} m",
-    "campaignComplete": "Campaign complete! Try endless mode or collect all stars."
+    "campaignComplete": "Campaign complete! Try endless mode or collect all stars.",
+    "announcement": "Announcement"
   },
   "worlds": {
     "desert": "Dust Valley",
@@ -169,5 +170,46 @@
     "medium": "Medium",
     "high": "High",
     "ultra": "Ultra"
+  },
+  "account": {
+    "title": "Account",
+    "signIn": "Sign in",
+    "signInGoogle": "Sign in with Google",
+    "signedOutText": "Sign in with Google to keep your progress in the cloud and continue on any device. You can always play as a guest without an account.",
+    "guestNote": "Your current guest progress is added to your account the first time you sign in on this device.",
+    "unavailable": "Sign-in is currently not available. Your progress is saved on this device.",
+    "maintenance": "The game is in maintenance mode. Sign-in is temporarily disabled.",
+    "signedInAs": "Signed in as",
+    "syncStatus": "Cloud save",
+    "status": {
+      "offline": "Not connected",
+      "idle": "Ready",
+      "syncing": "Syncing…",
+      "synced": "Up to date",
+      "error": "Sync failed — will retry"
+    },
+    "lastSync": "Last sync: {time}",
+    "syncNow": "Sync now",
+    "export": "Export my data",
+    "signOut": "Sign out",
+    "delete": "Delete account",
+    "deleteConfirm": "Delete your account and all cloud data? Your progress stays on this device. This cannot be undone.",
+    "deleted": "Your account was deleted.",
+    "signOutNote": "After signing out your progress stays on this device as a guest.",
+    "loginResult": {
+      "ok": "Signed in. Your progress is now saved in the cloud.",
+      "cancelled": "Sign-in was cancelled.",
+      "banned": "This account has been blocked.",
+      "unavailable": "Sign-in is currently not available.",
+      "error": "Sign-in failed. Please try again."
+    }
+  },
+  "legal": {
+    "privacy": "Privacy",
+    "imprint": "Imprint",
+    "credits": "Credits",
+    "close": "Close",
+    "offline": "The legal texts could not be loaded. Please try again when you are online.",
+    "creditsText": "LSG is free software made without purchased assets. All sounds and music are generated in your browser. 3D models and effects are created procedurally. Third-party assets and their licenses are listed in the project documentation (docs/ASSETS.md)."
   }
 }

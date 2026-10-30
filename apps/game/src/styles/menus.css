@@ -477,9 +477,191 @@
   }
 }
 
+/* -------------------------------------------------------------- account, legal, toasts */
+
+.account-panel {
+  text-align: left;
+}
+
+.account-panel h1 {
+  text-align: center;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0 14px;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgb(255 255 255 / 25%);
+}
+
+.avatar.placeholder {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #3fa9ff, #2a5fd0);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.profile-name {
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.muted-label {
+  display: block;
+  color: #9fb4dd;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sync-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(0 0 0 / 25%);
+  font-weight: 800;
+}
+
+.sync-status.synced span:last-child {
+  color: #36e27a;
+}
+
+.sync-status.error span:last-child {
+  color: #ffb020;
+}
+
+.menu-note.left {
+  text-align: left;
+}
+
+.btn.google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #fff;
+  color: #1f1f1f;
+  font-weight: 700;
+}
+
+.btn.google:hover {
+  background: #f1f3f4;
+}
+
+.google-mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: conic-gradient(#ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.legal-links {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.legal-links.left {
+  justify-content: flex-start;
+  margin-bottom: 8px;
+}
+
+.legal-links a {
+  color: #9fd3ff;
+}
+
+.legal-panel {
+  max-width: 640px;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.legal-text {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding-right: 6px;
+  color: #d6dff2;
+  font-size: 14px;
+  line-height: 1.55;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.announcement {
+  max-width: min(86vw, 420px);
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgb(255 208 74 / 45%);
+  background: rgb(60 44 4 / 70%);
+  color: #ffe9a6;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.toast {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 64px);
+  left: 50%;
+  z-index: 20;
+  max-width: min(90vw, 420px);
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgb(20 30 52 / 95%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 40%);
+  font-weight: 700;
+  transform: translateX(-50%);
+  animation: toast-in 0.25s ease-out;
+  transition: opacity 0.4s ease;
+}
+
+.toast.ok {
+  border-color: rgb(54 226 122 / 60%);
+}
+
+.toast.bad {
+  border-color: rgb(255 77 94 / 60%);
+}
+
+.toast.leaving {
+  opacity: 0;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .star-row.big .star.filled,
-  .new-best {
+  .new-best,
+  .toast {
     animation: none;
   }
 }

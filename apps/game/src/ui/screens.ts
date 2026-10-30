@@ -31,6 +31,8 @@ export interface MenuHandlers {
   settings: () => void;
   account?: (() => void) | null;
   accountLabel?: string | null;
+  /** Operator announcement shown as a banner. */
+  announcement?: string | null;
 }
 
 const WORLDS: WorldId[] = ['desert', 'city', 'station'];
@@ -79,6 +81,11 @@ export class Screens {
 
   get visible(): boolean {
     return this.root.classList.contains('active');
+  }
+
+  /** Shows an arbitrary prebuilt panel (account, legal texts). */
+  showCustom(content: HTMLElement, dim = true): void {
+    this.show(content, dim);
   }
 
   private show(content: HTMLElement, dim = true): void {
@@ -156,6 +163,9 @@ export class Screens {
           })
         : null,
       model.campaignComplete ? h('div', { class: 'menu-note', text: t('menu.campaignComplete') }) : null,
+      handlers.announcement
+        ? h('div', { class: 'announcement interactive', attrs: { role: 'status' } }, handlers.announcement)
+        : null,
       h('div', { class: 'start-hint', text: t('app.controlsHint') }),
     );
     this.show(content, false);

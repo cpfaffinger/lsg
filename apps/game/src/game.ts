@@ -61,10 +61,13 @@ export class Game {
   /** Re-renders whatever overlay is open (after a language change or a purchase). */
   private refreshScreen: (() => void) | null = null;
   private lastVibration = 0;
+  private overlayOpen = false;
   /** Extra settings UI (e.g. account section) injected by other modules. */
   settingsExtra: (() => HTMLElement | null) | null = null;
   /** Account button shown in the main menu, provided by the sync module. */
-  accountButton: { label: () => string; open: () => void } | null = null;
+  accountButton: { label: () => string | null; open: () => void } | null = null;
+  /** Operator announcement for the main menu. */
+  announcement: () => string | null = () => null;
 
   constructor(canvas: HTMLCanvasElement, ui: HTMLElement) {
     const quality = this.resolveQuality();
@@ -321,7 +324,31 @@ export class Game {
     return tiles;
   }
 
+  /** Shows a custom overlay (account, legal) on top of the current menu page. */
+  showOverlay(content: HTMLElement): void {
+    this.overlayOpen = true;
+    this.screens.showCustom(content);
+  }
+
+  /** Re-renders the current menu page unless an overlay (account, legal) is open. */
+  closeOverlayIfMenu(): void {
+    if (this.states.current === 'menu' && !this.overlayOpen) this.showMenu(this.menuPage);
+  }
+
+  /** Returns to the current menu page (or hides overlays while playing). */
+  closeOverlay(): void {
+    this.overlayOpen = false;
+    if (this.states.current === 'menu') this.showMenu(this.menuPage);
+    else if (this.refreshScreen) this.refreshScreen();
+    else this.screens.hide();
+  }
+
+  get inMenu(): boolean {
+    return this.states.current === 'menu';
+  }
+
   showMenu(page: MenuPage): void {
+    this.overlayOpen = false;
     this.menuPage = page;
     const render = () => {
       const model = this.menuModel();
@@ -333,8 +360,9 @@ export class Game {
             levels: () => this.showMenu('levels'),
             shop: () => this.showMenu('shop'),
             settings: () => this.showMenu('settings'),
-            account: this.accountButton ? () => this.accountButton?.open() : null,
+            account: this.accountButton?.label() ? () => this.accountButton?.open() : null,
             accountLabel: this.accountButton?.label() ?? null,
+            announcement: this.announcement(),
           });
           break;
         case 'levels':
