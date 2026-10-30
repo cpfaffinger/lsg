@@ -43,11 +43,26 @@
     "coinsOnly": "Coins are earned in-game only. No real money, ever."
   },
   "upgrade": {
-    "squad": { "name": "Recruits", "effect": "+{value} starting soldier" },
-    "damage": { "name": "Firepower", "effect": "+{value}% damage" },
-    "fireRate": { "name": "Trigger speed", "effect": "+{value}% fire rate" },
-    "coins": { "name": "Coin magnet", "effect": "+{value}% coins" },
-    "speed": { "name": "Agility", "effect": "+{value}% steering speed" }
+    "squad": {
+      "name": "Recruits",
+      "effect": "+{value} starting soldier"
+    },
+    "damage": {
+      "name": "Firepower",
+      "effect": "+{value}% damage"
+    },
+    "fireRate": {
+      "name": "Trigger speed",
+      "effect": "+{value}% fire rate"
+    },
+    "coins": {
+      "name": "Coin magnet",
+      "effect": "+{value}% coins"
+    },
+    "speed": {
+      "name": "Agility",
+      "effect": "+{value}% steering speed"
+    }
   },
   "skin": {
     "classic": "Classic",
@@ -142,7 +157,8 @@
     "barrier": "Walls! Steer around them or lose soldiers.",
     "shield": "Shield bearers block straight shots. Hit them from the side or use spread and rockets.",
     "laser": "Laser: pierces through several enemies.",
-    "rocket": "Rockets: slow but explosive."
+    "rocket": "Rockets: slow but explosive.",
+    "continue": "Let's go!"
   },
   "debug": {
     "fps": "{fps} FPS",

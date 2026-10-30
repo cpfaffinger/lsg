@@ -490,7 +490,7 @@ export class Screens {
   showUnlock(feature: string, onContinue: () => void): void {
     this.show(
       this.panel(t('unlock.title'), t(`unlock.${feature}`), null, [
-        button(t('pause.resume'), onContinue, 'btn primary'),
+        button(t('unlock.continue'), onContinue, 'btn primary'),
       ]),
     );
   }

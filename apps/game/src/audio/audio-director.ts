@@ -56,8 +56,12 @@ export class AudioDirector {
           this.audio.play('enemyShot', { volume: 0.3 });
           break;
         case 'bossSpawned':
-          this.audio.play('bossRoar', { volume: 0.9, jitter: 0 });
-          this.audio.setMood('boss');
+          this.audio.play('bossRoar', {
+            volume: event.kind === 'boss' ? 0.9 : 0.6,
+            rate: event.kind === 'boss' ? 1 : 1.3,
+            jitter: 0,
+          });
+          if (event.kind === 'boss') this.audio.setMood('boss');
           break;
         case 'bossPhase':
           this.audio.play('bossRoar', { volume: 0.6, rate: 1.15, jitter: 0 });

@@ -417,8 +417,8 @@ export class Simulation {
     if (kind === 'boss') {
       this.bossId = boss.id;
       this.bossSummonTimer = 5;
-      this.emit({ type: 'bossSpawned', id: boss.id });
     }
+    this.emit({ type: 'bossSpawned', id: boss.id, kind });
   }
 
   // ---------------------------------------------------------------- gates

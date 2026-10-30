@@ -416,7 +416,7 @@ export class Game {
           this.vibrate(25);
           break;
         case 'bossSpawned':
-          this.audio.setMood('boss');
+          if (event.kind === 'boss') this.audio.setMood('boss');
           this.vibrate(60);
           break;
         case 'levelComplete':

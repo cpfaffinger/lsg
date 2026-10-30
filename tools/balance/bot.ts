@@ -36,6 +36,8 @@ export function playLevel(
   const sim = new Simulation(level, modifiers);
   const timeline: { t: number; distance: number; units: number }[] = [];
   const losses: Record<string, number> = {};
+  let bossStart = -1;
+  let bossSeconds = 0;
   const decided = new Map<number, number>();
   let rngState = level.seed;
   const random = () => {
@@ -83,6 +85,13 @@ export function playLevel(
     sim.step(DT, { dragWorld: targetX - sim.squadX, axis: 0 });
     for (const event of sim.drainEvents()) {
       if (event.type === 'unitsLost') losses[event.cause] = (losses[event.cause] ?? 0) + event.count;
+      if (event.type === 'bossSpawned') bossStart = t;
+      if (
+        event.type === 'enemyKilled' &&
+        (event.kind === 'boss' || event.kind === 'miniboss') &&
+        bossStart >= 0
+      )
+        bossSeconds = t - bossStart;
     }
     const second = Math.floor(t);
     if (second !== lastSample && second % 5 === 0) {
@@ -97,6 +106,7 @@ export function playLevel(
     distance: Math.round(sim.distance),
     timeline,
     losses,
+    bossSeconds,
   };
 }
 

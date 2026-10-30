@@ -127,7 +127,7 @@ export type SimEvent =
   | { type: 'explosion'; x: number; z: number; radius: number }
   | { type: 'enemyShot'; x: number; z: number }
   | { type: 'obstacleHit'; id: number; x: number; z: number }
-  | { type: 'bossSpawned'; id: number }
+  | { type: 'bossSpawned'; id: number; kind: 'boss' | 'miniboss' }
   | { type: 'bossPhase'; id: number; phase: number }
   | { type: 'levelComplete' }
   | { type: 'levelFailed' };
