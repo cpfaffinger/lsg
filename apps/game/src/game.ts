@@ -1,3 +1,5 @@
+import { SIM_DT } from './core/game-loop.ts';
+import { ReplayRecorder } from './sim/replay.ts';
 import { totalStars, unlockedLevel, type UpgradeId } from '@lsg/shared';
 import { AudioDirector } from './audio/audio-director.ts';
 import { AudioManager } from './audio/audio-manager.ts';
@@ -57,6 +59,8 @@ export class Game {
   private sim: Simulation;
   private mode: RunMode = { kind: 'campaign', level: 1 };
   private modifiers: RunModifiers = DEFAULT_MODIFIERS;
+  private recorder: ReplayRecorder | null = null;
+  private framePerf = { frames: 0, seconds: 0, slow: 0 };
   private resultShown = false;
   private restartRequested = false;
   /** Simulation events collected during this frame's steps, consumed by effects and audio. */
@@ -224,6 +228,7 @@ export class Game {
             this.states.transition('playing');
           },
           quit: () => this.states.transition('menu'),
+          debug: () => this.downloadReplay(),
         });
       },
       exit: () => {
@@ -245,6 +250,8 @@ export class Game {
           ? endlessLevel()
           : mode.level;
     this.sim = new Simulation(level, this.modifiers);
+    this.recorder = new ReplayRecorder(level, this.modifiers, SIM_DT);
+    this.framePerf = { frames: 0, seconds: 0, slow: 0 };
     this.renderer.setWorld(level.world);
     this.effects.setWorld(level.world);
     this.audio.setWorld(level.world);
@@ -296,6 +303,7 @@ export class Game {
       const result = this.progress.recordEndlessRun(this.sim.distance, stats);
       const show = () =>
         this.screens.showEndlessResult(this.sim.distance, stats, result.coins, result.newBest, {
+          debug: () => this.downloadReplay(),
           retry: () => this.startRun({ kind: 'endless' }),
           menu: () => this.states.transition('menu'),
         });
@@ -318,6 +326,7 @@ export class Game {
     const next = levelNumber < CAMPAIGN_LENGTH ? levelNumber + 1 : null;
     const show = () =>
       this.screens.showCampaignResult(won, stats, this.sim.units, reward, {
+        debug: () => this.downloadReplay(),
         next: next ? () => this.startRun({ kind: 'campaign', level: next }) : null,
         retry: () => this.startRun({ kind: 'campaign', level: levelNumber }),
         menu: () => this.states.transition('menu'),
@@ -466,11 +475,37 @@ export class Game {
     const playing = this.states.current === 'playing';
     const dragPx = this.input.consumeDragDelta();
     if (!playing) return;
-    this.sim.step(dt, {
-      dragWorld: dragPx * this.renderer.worldPerPixel(),
-      axis: this.input.keyAxis,
+    const input = { dragWorld: dragPx * this.renderer.worldPerPixel(), axis: this.input.keyAxis };
+    this.sim.step(dt, input);
+    const events = this.sim.drainEvents();
+    this.recorder?.record(input, this.sim, events);
+    this.handleEvents(events);
+  }
+
+  /** Saves the current or last run as a JSON file that tools/replay/analyze.ts can read. */
+  private downloadReplay(): void {
+    if (!this.recorder) return;
+    const { frames, seconds, slow } = this.framePerf;
+    const settings = this.settings.get();
+    const file = this.recorder.build(this.sim, {
+      gameVersion: __LSG_VERSION__,
+      mode: this.mode.kind,
+      client: {
+        userAgent: navigator.userAgent,
+        viewport: [window.innerWidth, window.innerHeight],
+        devicePixelRatio: window.devicePixelRatio,
+        quality: settings.quality,
+        locale: settings.locale ?? 'en',
+        averageFps: seconds > 0 ? Math.round(frames / seconds) : 0,
+        slowFrameShare: frames > 0 ? Number((slow / frames).toFixed(3)) : 0,
+      },
     });
-    this.handleEvents(this.sim.drainEvents());
+    const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `lsg-replay-${this.sim.level.id}-${file.createdAt.replace(/[:.]/g, '-')}.json`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
   }
 
   private vibrate(ms: number): void {
@@ -515,6 +550,11 @@ export class Game {
   }
 
   private render(alpha: number, frameDt: number): void {
+    if (this.states.current === 'playing') {
+      this.framePerf.frames++;
+      this.framePerf.seconds += frameDt;
+      if (frameDt > 1 / 30) this.framePerf.slow++;
+    }
     this.world.squad.handleEvents(this.frameEvents);
     this.world.update(this.sim, alpha, frameDt);
     this.renderer.setScroll(this.sim.distance);

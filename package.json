@@ -24,7 +24,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
-    "probe": "node --disable-warning=ExperimentalWarning tools/balance/probe.ts"
+    "probe": "node --disable-warning=ExperimentalWarning tools/balance/probe.ts",
+    "replay": "node --disable-warning=ExperimentalWarning tools/replay/analyze.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

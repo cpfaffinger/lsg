@@ -93,6 +93,9 @@
     "boss": "Boss",
     "combo": "{n}× combo"
   },
+  "debug": {
+    "download": "Download debug file"
+  },
   "pause": {
     "title": "Paused",
     "resume": "Resume",

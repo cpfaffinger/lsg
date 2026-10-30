@@ -85,6 +85,13 @@
   width: min(86vw, 360px);
 }
 
+.btn.subtle {
+  opacity: 0.7;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 600;
+}
+
 .btn.tile {
   padding: 14px 10px;
   background: rgb(16 24 44 / 75%);

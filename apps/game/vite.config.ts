@@ -1,11 +1,14 @@
+import fs from 'node:fs';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 const apiTarget = process.env.LSG_API_PROXY_TARGET ?? 'http://localhost:3000';
 const usePolling = process.env.LSG_WATCH_POLLING === '1';
+const packageVersion = (JSON.parse(fs.readFileSync('package.json', 'utf8')) as { version: string }).version;
 
 export default defineConfig({
   base: '/',
+  define: { __LSG_VERSION__: JSON.stringify(packageVersion) },
   cacheDir: process.env.LSG_VITE_CACHE_DIR ?? 'node_modules/.vite',
   plugins: [
     VitePWA({

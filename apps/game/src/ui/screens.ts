@@ -461,12 +461,18 @@ export class Screens {
     this.show(this.page(t('settings.title'), handlers.back, null, body));
   }
 
-  showPause(handlers: { resume: () => void; restart: () => void; quit: () => void }): void {
+  showPause(handlers: {
+    resume: () => void;
+    restart: () => void;
+    quit: () => void;
+    debug: () => void;
+  }): void {
     this.show(
       this.panel(t('pause.title'), null, null, [
         button(t('pause.resume'), handlers.resume, 'btn primary'),
         button(t('pause.restart'), handlers.restart),
         button(t('pause.quit'), handlers.quit),
+        button(t('debug.download'), handlers.debug, 'btn small subtle'),
       ]),
     );
   }
@@ -476,7 +482,7 @@ export class Screens {
     stats: RunStats,
     finalUnits: number,
     reward: RunReward,
-    handlers: { next: (() => void) | null; retry: () => void; menu: () => void },
+    handlers: { next: (() => void) | null; retry: () => void; menu: () => void; debug: () => void },
   ): void {
     const rows: [string, string][] = [
       [t('result.kills'), formatNumber(stats.kills)],
@@ -526,6 +532,7 @@ export class Screens {
       ),
     );
     actions.push(button(t('result.menu'), handlers.menu));
+    actions.push(button(t('debug.download'), handlers.debug, 'btn small subtle'));
     this.show(
       this.panel(
         won ? t('result.wonTitle') : t('result.lostTitle'),
@@ -541,7 +548,7 @@ export class Screens {
     stats: RunStats,
     coins: number,
     newBest: boolean,
-    handlers: { retry: () => void; menu: () => void },
+    handlers: { retry: () => void; menu: () => void; debug: () => void },
   ): void {
     const list = h('dl', { class: 'result-stats' });
     const rows: [string, string][] = [
@@ -562,7 +569,11 @@ export class Screens {
         t('result.endlessTitle'),
         t('result.endlessSubtitle', { distance: formatNumber(Math.round(distance)) }),
         body,
-        [button(t('result.retry'), handlers.retry, 'btn primary'), button(t('result.menu'), handlers.menu)],
+        [
+          button(t('result.retry'), handlers.retry, 'btn primary'),
+          button(t('result.menu'), handlers.menu),
+          button(t('debug.download'), handlers.debug, 'btn small subtle'),
+        ],
       ),
     );
   }
