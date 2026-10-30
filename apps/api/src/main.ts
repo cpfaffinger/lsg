@@ -4,7 +4,7 @@ import { buildServer } from './server.ts';
 
 const config = loadConfig();
 const db = openDatabase(config.databaseFile);
-const app = await buildServer({ config, db });
+const { app } = await buildServer({ config, db, scheduleBackups: true });
 
 const shutdown = async (signal: string): Promise<void> => {
   console.info(`Received ${signal}, shutting down.`);
