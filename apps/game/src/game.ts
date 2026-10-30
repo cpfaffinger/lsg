@@ -3,7 +3,13 @@ import { AudioDirector } from './audio/audio-director.ts';
 import { AudioManager } from './audio/audio-manager.ts';
 import { GameLoop } from './core/game-loop.ts';
 import { InputController } from './core/input.ts';
-import { detectInitialQuality, QUALITY_PRESETS, type QualitySettings } from './core/quality.ts';
+import {
+  detectInitialQuality,
+  QUALITY_PRESETS,
+  type QualityLevel,
+  type QualitySettings,
+} from './core/quality.ts';
+import { QualityGovernor } from './core/quality-governor.ts';
 import { SettingsStore } from './core/settings.ts';
 import { StateMachine } from './core/state-machine.ts';
 import {
@@ -75,6 +81,9 @@ export class Game {
     this.input = new InputController(canvas);
     this.world = new WorldView(this.renderer.scene);
     this.effects = new EffectsDirector(this.renderer.scene, this.renderer.rig, quality);
+    this.effects.onPulse = (amount) => {
+      if (!this.settings.get().reducedMotion) this.renderer.postFx.pulse(amount);
+    };
     this.hud = new Hud(ui);
     this.screens = new Screens(ui);
     this.debug = new DebugOverlay(ui);
@@ -134,9 +143,19 @@ export class Game {
 
   // ------------------------------------------------------------------ settings
 
+  private readonly governor = new QualityGovernor(detectInitialQuality(navigator));
+
   private resolveQuality(): QualitySettings {
     const setting = this.settings.get().quality;
-    return QUALITY_PRESETS[setting === 'auto' ? detectInitialQuality(navigator) : setting];
+    return QUALITY_PRESETS[setting === 'auto' ? this.governor.level : setting];
+  }
+
+  private setQualityLevel(level: QualityLevel): void {
+    const quality = QUALITY_PRESETS[level];
+    this.renderer.applyQuality(quality);
+    this.effects.applyQuality(quality);
+    this.world.squad.setDetail(level === 'low' ? 0 : 1);
+    this.world.enemies.lodBias = quality.lodBias;
   }
 
   private applySettings(): void {
@@ -157,6 +176,7 @@ export class Game {
   private applySkin(): void {
     const skin = cosmeticById(this.progress.data.cosmetics.selected);
     this.world.squad.setColor(skin.body);
+    this.effects.squadColor = skin.body;
     this.world.projectiles.setColor(skin.projectile);
   }
 
@@ -222,6 +242,7 @@ export class Game {
           : mode.level;
     this.sim = new Simulation(level, this.modifiers);
     this.renderer.setWorld(level.world);
+    this.effects.setWorld(level.world);
     this.resultShown = false;
     this.lastDistance = 0;
     this.frameEvents.length = 0;
@@ -482,6 +503,7 @@ export class Game {
     this.audioDirector.handle(this.frameEvents);
     this.frameEvents.length = 0;
     this.audio.setIntensity(this.sim.units / 150);
+    this.effects.trails(this.sim, frameDt * this.loop.timeScale);
     this.effects.update(frameDt * this.loop.timeScale, Math.max(0, scrollDz));
     this.renderer.rig.followX = squadX * 0.25;
     // Follow the squad's depth and zoom out slightly so even huge squads stay fully in view.
@@ -489,6 +511,10 @@ export class Game {
     this.renderer.rig.targetAnchorZ = depth * 0.7;
     this.renderer.rig.targetZoom = 1 + Math.min(0.3, depth * 0.03);
     this.renderer.render(frameDt, true);
+    if (this.states.current === 'playing' && this.settings.get().quality === 'auto') {
+      const change = this.governor.sample(frameDt);
+      if (change) this.setQualityLevel(change);
+    }
     if (!this.hud.root.hidden) this.hud.update(this.sim, this.renderer, squadX, this.mode.kind === 'endless');
     this.debug.update(frameDt, {
       quality: this.renderer.currentQuality.level,

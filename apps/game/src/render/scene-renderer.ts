@@ -26,6 +26,7 @@ import type { QualitySettings } from '../core/quality.ts';
 import type { WorldId } from '../sim/level.ts';
 import { LANE_HALF_WIDTH, LANE_WIDTH } from '../sim/world.ts';
 import { CameraRig } from './camera-rig.ts';
+import { PostFX } from './post-fx.ts';
 import { Scenery } from './environment/scenery.ts';
 import { Sky } from './environment/sky.ts';
 import { THEMES, type WorldTheme } from './environment/themes.ts';
@@ -41,6 +42,7 @@ export class SceneRenderer {
   private readonly sun: DirectionalLight;
   private readonly hemi: HemisphereLight;
   private readonly sky = new Sky();
+  readonly postFx: PostFX;
   private readonly scenery: Scenery;
   private readonly laneMaterial: MeshStandardMaterial;
   private readonly groundMaterial: MeshStandardMaterial;
@@ -71,6 +73,7 @@ export class SceneRenderer {
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.shadowMap.type = PCFShadowMap;
     this.pmrem = new PMREMGenerator(this.renderer);
+    this.postFx = new PostFX(this.renderer, this.scene, this.rig.camera);
 
     this.scene.fog = new Fog(0x000000, 60, 200);
     this.scene.add(this.sky.mesh);
@@ -170,6 +173,7 @@ export class SceneRenderer {
     this.hemi.groundColor.setHex(theme.hemisphere.ground);
     this.hemi.intensity = theme.hemisphere.intensity;
     this.renderer.toneMappingExposure = theme.exposure;
+    this.postFx.applyGrading(theme.grading);
     this.groundMaterial.color.setHex(theme.ground.color);
     this.groundMaterial.roughness = theme.ground.roughness;
     this.edgeMaterial.color.setHex(theme.edge.color);
@@ -230,6 +234,8 @@ export class SceneRenderer {
     cam.updateProjectionMatrix();
     this.sun.shadow.map?.dispose();
     this.sun.shadow.map = null;
+    this.postFx.applyQuality(quality);
+    this.postFx.applyGrading(this.theme.grading);
     this.resize();
   }
 
@@ -237,6 +243,7 @@ export class SceneRenderer {
     const width = this.canvas.clientWidth || window.innerWidth;
     const height = this.canvas.clientHeight || window.innerHeight;
     this.renderer.setSize(width, height, false);
+    this.postFx?.setSize(width, height);
     this.rig.resize(width, height);
   }
 
@@ -262,7 +269,7 @@ export class SceneRenderer {
   render(frameDt: number, shake: boolean): void {
     this.rig.update(frameDt, shake);
     this.sky.update(this.rig.camera.position, frameDt);
-    this.renderer.render(this.scene, this.rig.camera);
+    this.postFx.render(frameDt);
   }
 
   get currentQuality(): QualitySettings {

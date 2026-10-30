@@ -23,6 +23,8 @@ const CAPACITY: Record<EnemyKind, number> = {
   boss: 2,
 };
 
+const BIG_KINDS: ReadonlySet<EnemyKind> = new Set(['boss', 'miniboss', 'tank']);
+
 /** Enemies further away than this (along -z) use the low-detail model. */
 const LOD_DISTANCE = 42;
 
@@ -105,7 +107,8 @@ export class EnemyView {
       mesh.setMatrixAt(index, this.matrix);
       params[index * 4] = enemy.seed;
       params[index * 4 + 1] = ENEMY_ANIMATION[enemy.kind].gait;
-      params[index * 4 + 2] = enemy.hitFlash > 0 ? 0.6 : 0;
+      // Big enemies are hit almost every frame; a strong flash would bleach them white.
+      params[index * 4 + 2] = enemy.hitFlash > 0 ? (BIG_KINDS.has(enemy.kind) ? 0.08 : 0.6) : 0;
       params[index * 4 + 3] = 0;
     }
     for (const entry of this.kinds.values()) {

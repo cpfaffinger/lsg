@@ -59,7 +59,8 @@ const fragmentShader = /* glsl */ `
   void main() {
     vec4 texel = texture2D(uAtlas, vUv);
     // Atlas: red = fill, green = outline.
-    vec3 color = mix(vec3(0.05, 0.05, 0.08), vColor.rgb, texel.r);
+    // Brighter than 1.0 so the text stays white after the tone-mapping pass.
+    vec3 color = mix(vec3(0.02, 0.02, 0.03), vColor.rgb * 2.4, texel.r);
     float alpha = max(texel.r, texel.g) * vColor.a;
     if (alpha < 0.02) discard;
     gl_FragColor = vec4(color, alpha);

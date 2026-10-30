@@ -3,11 +3,14 @@ import type { QualitySettings } from '../../core/quality.ts';
 import { formatCompact } from '../../i18n/i18n.ts';
 import { FACTOR_STEPS } from '../../sim/balance.ts';
 import { isGateBeneficial } from '../../sim/gates.ts';
+import type { WorldId } from '../../sim/level.ts';
+import type { Simulation } from '../../sim/simulation.ts';
 import type { EnemyKind, SimEvent } from '../../sim/types.ts';
 import type { CameraRig } from '../camera-rig.ts';
 import { ENEMY_COLORS, PALETTE } from '../palette.ts';
 import { DebrisSystem } from './debris-system.ts';
 import { FloatingText } from './floating-text.ts';
+import { GroundFx } from './ground-fx.ts';
 import { ParticleSystem, type ParticleSpawn } from './particle-system.ts';
 
 const DEBRIS_COUNT: Record<EnemyKind, number> = {
@@ -50,13 +53,139 @@ export class EffectsDirector {
   private muzzleBudget = 0;
   reducedMotion = false;
 
+  private readonly ground: GroundFx;
+  private world: WorldId = 'desert';
+  private ambientTimer = 0;
+  private trailTimer = 0;
+  /** Skin colour of the squad, used for the shards of lost soldiers. */
+  squadColor: number = PALETTE.squad;
+  /** Effects scheduled for later (boss death chain explosions). */
+  private readonly delayed: { at: number; run: () => void }[] = [];
+  private clock = 0;
+  /** Called for hits that deserve a chromatic-aberration pulse (0..1). */
+  onPulse: ((amount: number) => void) | null = null;
+
   constructor(scene: Scene, rig: CameraRig, quality: QualitySettings) {
     this.rig = rig;
     this.glow = new ParticleSystem(scene, 20000, AdditiveBlending, 0.8);
     this.smoke = new ParticleSystem(scene, 4000, NormalBlending, 0.9);
     this.debris = new DebrisSystem(scene, 1200);
     this.text = new FloatingText(scene);
+    this.ground = new GroundFx(scene);
     this.applyQuality(quality);
+  }
+
+  /** A chain of explosions across the boss's body after the killing blow. */
+  private bossDeath(x: number, z: number): void {
+    for (let i = 1; i <= 7; i++) {
+      this.delayed.push({
+        at: this.clock + i * 0.16,
+        run: () => {
+          const ox = x + (Math.random() - 0.5) * 4;
+          const oy = 1 + Math.random() * 5;
+          const oz = z + (Math.random() - 0.5) * 2;
+          this.flash(ox, oy, oz, 0xffb347, 5, 0.2, 6);
+          this.sparks(ox, oy, oz, 20, 0xff6a1a, 10, 4);
+          this.puff(ox, oy, oz, 4, 0x2e2a30, 3);
+          this.debris.burst(ox, oy, oz, 10, 0x3a0f2a, 8, 0.45);
+          this.shake(0.4);
+        },
+      });
+    }
+    this.delayed.push({
+      at: this.clock + 1.3,
+      run: () => {
+        this.ground.shockwave(x, z, 22, 0xff2050, 5, 1);
+        this.flash(x, 3, z, 0xffffff, 18, 0.35, 6);
+        this.onPulse?.(1);
+        this.shake(1.2);
+      },
+    });
+  }
+
+  setWorld(world: WorldId): void {
+    this.world = world;
+  }
+
+  /** Atmospheric particles around the visible lane: dust, rain or floating sparks. */
+  private ambient(dt: number): void {
+    this.ambientTimer += dt;
+    const interval = this.world === 'city' ? 0.008 : 0.05;
+    while (this.ambientTimer >= interval) {
+      this.ambientTimer -= interval;
+      const x = (Math.random() - 0.5) * 30;
+      const z = -Math.random() * 70 + 6;
+      if (this.world === 'desert') {
+        this.smoke.spawn({
+          x,
+          y: Math.random() * 1.5,
+          z,
+          vx: 2 + Math.random() * 2,
+          vy: 0.1,
+          vz: 0.5,
+          life: 2.5,
+          sizeStart: 0.6,
+          sizeEnd: 1.6,
+          ...rgb(0xe8c48e, 1),
+          alpha: 0.18,
+        });
+      } else if (this.world === 'city') {
+        this.glow.spawn({
+          x,
+          y: 6 + Math.random() * 6,
+          z,
+          vx: -0.6,
+          vy: -26,
+          vz: 0,
+          life: 0.35,
+          sizeStart: 0.05,
+          sizeEnd: 0.05,
+          ...rgb(0x9fb4ff, 0.6),
+          alpha: 0.6,
+        });
+      } else {
+        this.glow.spawn({
+          x,
+          y: 0.5 + Math.random() * 5,
+          z,
+          vx: 0,
+          vy: 0.3,
+          vz: 0.2,
+          life: 3,
+          sizeStart: 0.08,
+          sizeEnd: 0.02,
+          ...rgb(0x5ff3ff, 2.5),
+        });
+      }
+    }
+  }
+
+  /** Smoke trails behind rockets and a glow core on laser bolts. */
+  trails(sim: Simulation, dt: number): void {
+    this.trailTimer += dt;
+    if (this.trailTimer < 0.03) return;
+    this.trailTimer = 0;
+    let budget = 40;
+    for (const p of sim.projectiles) {
+      if (!p.alive || p.owner !== 'squad' || budget <= 0) continue;
+      if (p.weapon === 'rocket') {
+        budget--;
+        this.smoke.spawn({
+          x: p.x,
+          y: 0.75,
+          z: p.z + 0.4,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: 0.4,
+          vz: 0,
+          life: 0.6,
+          sizeStart: 0.25,
+          sizeEnd: 0.8,
+          ...rgb(0xb0a8a0, 1),
+          alpha: 0.45,
+        });
+        this.flash(p.x, 0.75, p.z + 0.3, 0xffa040, 0.6, 0.05, 4);
+      }
+    }
   }
 
   applyQuality(quality: QualitySettings): void {
@@ -66,6 +195,8 @@ export class EffectsDirector {
   }
 
   clear(): void {
+    this.delayed.length = 0;
+    this.ground.clear();
     this.glow.clear();
     this.smoke.clear();
     this.debris.clear();
@@ -197,6 +328,19 @@ export class EffectsDirector {
             big ? 0.4 : 0.22,
           );
           this.flash(event.x, 0.8, event.z, 0xffffff, big ? 4 : 1.4, 0.12, 3);
+          if (big) {
+            this.ground.shockwave(
+              event.x,
+              event.z,
+              event.kind === 'boss' ? 14 : event.kind === 'miniboss' ? 8 : 3,
+              color,
+              4,
+              0.7,
+            );
+            this.ground.scorchMark(event.x, event.z, event.kind === 'boss' ? 5 : 2);
+            this.onPulse?.(event.kind === 'boss' ? 1 : 0.5);
+          }
+          if (event.kind === 'boss') this.bossDeath(event.x, event.z);
           this.sparks(event.x, 0.8, event.z, big ? 30 : 6, color, big ? 9 : 5, 4);
           if (big) {
             this.puff(event.x, 0.8, event.z, 12, 0x3a3540, 2.5);
@@ -215,6 +359,7 @@ export class EffectsDirector {
           const good = isGateBeneficial(event.op, event.value);
           const color =
             event.op === 'weapon' ? PALETTE.gateWeapon : good ? PALETTE.gateGood : PALETTE.gateBad;
+          this.ground.shockwave(squadX, 0, 5, color, 3, 0.5);
           for (let i = 0; i < 40; i++) {
             const a = (i / 40) * Math.PI * 2;
             this.glow.spawn({
@@ -237,12 +382,24 @@ export class EffectsDirector {
           break;
         }
         case 'unitsLost':
-          this.debris.burst(event.x, 0.5, event.z, Math.min(16, 2 + event.count * 2), PALETTE.squad, 4, 0.18);
+          this.debris.burst(
+            event.x,
+            0.5,
+            event.z,
+            Math.min(16, 2 + event.count * 2),
+            this.squadColor,
+            4,
+            0.18,
+          );
+          if (event.count >= 5) this.onPulse?.(Math.min(0.6, event.count * 0.04));
           this.text.spawn(`−${formatCompact(event.count)}`, event.x, 2, event.z, 0xff5468, 0.9, 0.8);
           this.shake(Math.min(0.45, 0.06 + event.count * 0.02));
           break;
         case 'explosion': {
           const r = event.radius;
+          this.ground.shockwave(event.x, event.z, r, 0xffa040, 3.5);
+          this.ground.scorchMark(event.x, event.z, r);
+          this.onPulse?.(0.35);
           this.flash(event.x, 1, event.z, 0xffb347, r * 2.6, 0.18, 5);
           for (let i = 0; i < 26; i++) {
             const a = Math.random() * Math.PI * 2;
@@ -320,6 +477,16 @@ export class EffectsDirector {
         this.pendingDamage.delete(id);
       }
     }
+    this.clock += dt;
+    for (let i = this.delayed.length - 1; i >= 0; i--) {
+      const item = this.delayed[i];
+      if (item && item.at <= this.clock) {
+        this.delayed.splice(i, 1);
+        item.run();
+      }
+    }
+    this.ambient(dt);
+    this.ground.update(dt, scrollDz);
     this.smoke.scroll(scrollDz);
     this.glow.update(dt);
     this.smoke.update(dt);

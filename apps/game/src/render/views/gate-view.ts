@@ -145,6 +145,8 @@ export class GateView {
       this.labelGeometry,
       new MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false }),
     );
+    // Over-bright so the label stays white after tone mapping.
+    label.material.color.setScalar(2.2);
     label.position.set(0, GATE_HEIGHT * 0.55, 0.06);
     label.renderOrder = 4;
     group.add(frame, glow, field, label);
