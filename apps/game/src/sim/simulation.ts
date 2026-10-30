@@ -42,6 +42,8 @@ const SQUAD_FRONT_Z = SQUAD_Z - 0.45;
 const AIM_RANGE = 34;
 const AIM_CONE = 0.55;
 const AIM_CANDIDATES = 16;
+/** tan(~17°): shots flatter than this hit a shield bearer's front plate. */
+const SHIELD_SIDE_SLOPE = 0.3;
 const BARREL_EXPLOSION_RADIUS = 3.6;
 const BARREL_EXPLOSION_DAMAGE = 450;
 
@@ -632,10 +634,12 @@ export class Simulation {
     if (
       enemy.kind === 'shield' &&
       projectile &&
-      projectile.aoe === 0 &&
-      Math.abs(projectile.vx) < Math.abs(projectile.vz) * 0.1
+      (projectile.weapon === 'rifle' || projectile.weapon === 'laser') &&
+      Math.abs(projectile.vx) < Math.abs(projectile.vz) * SHIELD_SIDE_SLOPE
     ) {
-      damage *= 0.25;
+      // The front shield stops most frontal rifle and laser fire. Spread pellets and rockets
+      // get around it, as do shots from the side.
+      damage *= 0.2;
     }
     enemy.hp -= damage;
     enemy.hitFlash = 0.08;
