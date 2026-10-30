@@ -1,0 +1,24 @@
+# Persistent container data (bind mounts, not part of the repo)
+data/
+
+# Dependencies and build output
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Environment files with secrets
+.env
+.env.*
+!.env.example
+
+# Raw downloads and intermediate files of the asset pipeline
+assets-src/downloads/
+assets-src/tmp/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
