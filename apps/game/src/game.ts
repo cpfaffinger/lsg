@@ -1,3 +1,4 @@
+import { gpuSafeMode } from './render/gpu-health.ts';
 import { SIM_DT } from './core/game-loop.ts';
 import { ReplayRecorder } from './sim/replay.ts';
 import { totalStars, unlockedLevel, type UpgradeId } from '@lsg/shared';
@@ -82,6 +83,10 @@ export class Game {
   constructor(canvas: HTMLCanvasElement, ui: HTMLElement) {
     const quality = this.resolveQuality();
     this.renderer = new SceneRenderer(canvas, quality);
+    this.renderer.health.onFailure = () => {
+      this.settings.update({ quality: 'auto' });
+      this.setQualityLevel('low');
+    };
     this.input = new InputController(canvas);
     this.world = new WorldView(this.renderer.scene);
     this.effects = new EffectsDirector(this.renderer.scene, this.renderer.rig, quality);
@@ -147,15 +152,17 @@ export class Game {
 
   // ------------------------------------------------------------------ settings
 
-  private readonly governor = new QualityGovernor(detectInitialQuality(navigator));
+  private readonly governor = new QualityGovernor(gpuSafeMode() ? 'low' : detectInitialQuality(navigator));
 
   private resolveQuality(): QualitySettings {
     const setting = this.settings.get().quality;
+    if (gpuSafeMode()) return QUALITY_PRESETS.low;
     return QUALITY_PRESETS[setting === 'auto' ? this.governor.level : setting];
   }
 
   private setQualityLevel(level: QualityLevel): void {
     const quality = QUALITY_PRESETS[level];
+    this.governor.reset(level);
     this.renderer.applyQuality(quality);
     this.effects.applyQuality(quality);
     this.world.squad.setDetail(level === 'low' ? 0 : 1);
@@ -494,10 +501,11 @@ export class Game {
         userAgent: navigator.userAgent,
         viewport: [window.innerWidth, window.innerHeight],
         devicePixelRatio: window.devicePixelRatio,
-        quality: settings.quality,
+        quality: `${settings.quality} (${this.renderer.currentQuality.level})`,
         locale: settings.locale ?? 'en',
         averageFps: seconds > 0 ? Math.round(frames / seconds) : 0,
         slowFrameShare: frames > 0 ? Number((slow / frames).toFixed(3)) : 0,
+        gpu: this.renderer.health.report(),
       },
     });
     const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: 'application/json' }));

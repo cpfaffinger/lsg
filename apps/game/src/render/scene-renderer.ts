@@ -26,6 +26,7 @@ import type { QualitySettings } from '../core/quality.ts';
 import type { WorldId } from '../sim/level.ts';
 import { LANE_HALF_WIDTH, LANE_WIDTH } from '../sim/world.ts';
 import { CameraRig } from './camera-rig.ts';
+import { GpuHealth, gpuSafeMode, supportsFloatTarget } from './gpu-health.ts';
 import { PostFX } from './post-fx.ts';
 import { Scenery } from './environment/scenery.ts';
 import { Sky } from './environment/sky.ts';
@@ -54,6 +55,8 @@ export class SceneRenderer {
   private readonly environments = new Map<string, Promise<Texture>>();
   private quality: QualitySettings;
   private readonly canvas: HTMLCanvasElement;
+  readonly health: GpuHealth;
+  private readonly floatTargets: boolean;
   private readonly tmp = new Vector3();
   private theme: WorldTheme = THEMES.desert;
   private laneTileSize = 7;
@@ -66,14 +69,16 @@ export class SceneRenderer {
     this.renderer = new WebGLRenderer({
       canvas,
       antialias: quality.antialias,
-      powerPreference: 'high-performance',
+      powerPreference: gpuSafeMode() ? 'default' : 'high-performance',
       stencil: false,
     });
+    this.health = new GpuHealth(this.renderer, canvas);
+    this.floatTargets = supportsFloatTarget(this.renderer.getContext() as WebGL2RenderingContext);
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.shadowMap.type = PCFShadowMap;
     this.pmrem = new PMREMGenerator(this.renderer);
-    this.postFx = new PostFX(this.renderer, this.scene, this.rig.camera);
+    this.postFx = new PostFX(this.renderer, this.scene, this.rig.camera, this.floatTargets);
 
     this.scene.fog = new Fog(0x000000, 60, 200);
     this.scene.add(this.sky.mesh);
@@ -137,7 +142,9 @@ export class SceneRenderer {
     return promise;
   }
 
-  private loadEnvironment(url: string): Promise<Texture> {
+  private loadEnvironment(url: string): Promise<Texture | null> {
+    // Image-based lighting needs float targets; hemisphere and sun light still work without.
+    if (!this.floatTargets) return Promise.resolve(null);
     let promise = this.environments.get(url);
     if (!promise) {
       promise = this.hdrLoader.loadAsync(url).then((hdr: DataTexture) => {
@@ -237,6 +244,7 @@ export class SceneRenderer {
     this.postFx.applyQuality(quality);
     this.postFx.applyGrading(this.theme.grading);
     this.resize();
+    this.health?.watch();
   }
 
   resize(): void {
@@ -270,6 +278,7 @@ export class SceneRenderer {
     this.rig.update(frameDt, shake);
     this.sky.update(this.rig.camera.position, frameDt);
     this.postFx.render(frameDt);
+    this.health.afterFrame();
   }
 
   get currentQuality(): QualitySettings {

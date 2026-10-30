@@ -30,6 +30,13 @@ if (client) {
       `${client.averageFps} FPS, slow frames ${(client.slowFrameShare * 100).toFixed(1)} %`,
   );
   console.info(`  ${client.userAgent}`);
+  if (client.gpu) {
+    console.info(`GPU ${client.gpu.renderer} (${client.gpu.vendor}), ${client.gpu.version}`);
+    console.info(
+      `  max texture ${client.gpu.maxTextureSize}, float targets ${client.gpu.floatRenderTarget}, safe mode ${client.gpu.safeMode}`,
+    );
+    for (const message of client.gpu.log) console.info(`  ${message}`);
+  }
 }
 
 const rerun = replaySimulation(replay);

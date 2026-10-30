@@ -35,6 +35,7 @@ export class PostFX {
   private readonly renderer: WebGLRenderer;
   private readonly scene: Scene;
   private readonly camera: Camera;
+  private readonly floatTargets: boolean;
   private composer: EffectComposer | null = null;
   private bloom: BloomEffect | null = null;
   private vignette: VignetteEffect | null = null;
@@ -46,10 +47,11 @@ export class PostFX {
   private aberration = 0;
   private readonly chromaOffset = new Vector2();
 
-  constructor(renderer: WebGLRenderer, scene: Scene, camera: Camera) {
+  constructor(renderer: WebGLRenderer, scene: Scene, camera: Camera, floatTargets: boolean) {
     this.renderer = renderer;
     this.scene = scene;
     this.camera = camera;
+    this.floatTargets = floatTargets;
   }
 
   get enabled(): boolean {
@@ -60,7 +62,7 @@ export class PostFX {
     this.quality = quality;
     this.composer?.dispose();
     this.composer = null;
-    if (!quality.postProcessing) {
+    if (!quality.postProcessing || !this.floatTargets) {
       this.renderer.toneMapping = ACESFilmicToneMapping;
       return;
     }

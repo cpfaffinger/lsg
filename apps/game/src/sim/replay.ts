@@ -50,6 +50,17 @@ export interface ReplayClientInfo {
   averageFps: number;
   /** Share of frames slower than 30 FPS. */
   slowFrameShare: number;
+  /** Graphics chip, capabilities and problems seen while running. */
+  gpu?: {
+    renderer: string;
+    vendor: string;
+    version: string;
+    maxTextureSize: number;
+    colorBufferFloat: boolean;
+    floatRenderTarget: boolean;
+    safeMode: boolean;
+    log: string[];
+  };
 }
 
 /** Everything needed to rerun a played level step by step and to read what happened in it. */

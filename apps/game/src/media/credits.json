@@ -3,14 +3,10 @@
     "id": "goegap",
     "name": "Goegap",
     "kind": "hdri",
-    "authors": [
-      "Greg Zaal"
-    ],
+    "authors": ["Greg Zaal"],
     "license": "CC0 1.0",
     "source": "https://polyhaven.com/a/goegap",
-    "files": [
-      "hdri/goegap_1k.hdr"
-    ],
+    "files": ["hdri/goegap_1k.hdr"],
     "usedFor": "Dust Valley lighting and reflections",
     "changes": "none"
   },
@@ -18,14 +14,10 @@
     "id": "shanghai_bund",
     "name": "Shanghai Bund",
     "kind": "hdri",
-    "authors": [
-      "Greg Zaal"
-    ],
+    "authors": ["Greg Zaal"],
     "license": "CC0 1.0",
     "source": "https://polyhaven.com/a/shanghai_bund",
-    "files": [
-      "hdri/shanghai_bund_1k.hdr"
-    ],
+    "files": ["hdri/shanghai_bund_1k.hdr"],
     "usedFor": "Neon City lighting and reflections",
     "changes": "none"
   },
@@ -33,14 +25,10 @@
     "id": "studio_small_08",
     "name": "Studio Small 08",
     "kind": "hdri",
-    "authors": [
-      "Sergej Majboroda"
-    ],
+    "authors": ["Sergej Majboroda"],
     "license": "CC0 1.0",
     "source": "https://polyhaven.com/a/studio_small_08",
-    "files": [
-      "hdri/studio_small_08_1k.hdr"
-    ],
+    "files": ["hdri/studio_small_08_1k.hdr"],
     "usedFor": "Orbit Station lighting and reflections",
     "changes": "none"
   },
@@ -48,15 +36,10 @@
     "id": "aerial_beach_01",
     "name": "Aerial Beach 01",
     "kind": "texture",
-    "authors": [
-      "Rob Tuytel"
-    ],
+    "authors": ["Rob Tuytel"],
     "license": "CC0 1.0",
     "source": "https://polyhaven.com/a/aerial_beach_01",
-    "files": [
-      "textures/aerial_beach_01/diff_1k.jpg",
-      "textures/aerial_beach_01/nor_1k.jpg"
-    ],
+    "files": ["textures/aerial_beach_01/diff_1k.jpg", "textures/aerial_beach_01/nor_1k.jpg"],
     "usedFor": "Dust Valley lane surface",
     "changes": "none"
   },
@@ -64,15 +47,10 @@
     "id": "asphalt_02",
     "name": "Asphalt 02",
     "kind": "texture",
-    "authors": [
-      "Rob Tuytel"
-    ],
+    "authors": ["Rob Tuytel"],
     "license": "CC0 1.0",
     "source": "https://polyhaven.com/a/asphalt_02",
-    "files": [
-      "textures/asphalt_02/diff_1k.jpg",
-      "textures/asphalt_02/nor_1k.jpg"
-    ],
+    "files": ["textures/asphalt_02/diff_1k.jpg", "textures/asphalt_02/nor_1k.jpg"],
     "usedFor": "Neon City lane surface",
     "changes": "none"
   },
@@ -80,65 +58,46 @@
     "id": "blue_metal_plate",
     "name": "Blue Metal Plate",
     "kind": "texture",
-    "authors": [
-      "Rob Tuytel"
-    ],
+    "authors": ["Rob Tuytel"],
     "license": "CC0 1.0",
     "source": "https://polyhaven.com/a/blue_metal_plate",
-    "files": [
-      "textures/blue_metal_plate/diff_1k.jpg",
-      "textures/blue_metal_plate/nor_1k.jpg"
-    ],
+    "files": ["textures/blue_metal_plate/diff_1k.jpg", "textures/blue_metal_plate/nor_1k.jpg"],
     "usedFor": "Orbit Station lane surface",
     "changes": "none"
   },
   {
     "name": "Sci-Fi Sounds, Impact Sounds, Interface Sounds, Music Jingles",
-    "authors": [
-      "Kenney"
-    ],
+    "authors": ["Kenney"],
     "usedFor": "sound effects",
     "source": "https://kenney.nl/assets/category:Audio"
   },
   {
     "name": "Determined Pursuit",
-    "authors": [
-      "Emma_MA"
-    ],
+    "authors": ["Emma_MA"],
     "usedFor": "menu music",
     "source": "https://opengameart.org/content/determined-pursuit-epic-orchestra-loop"
   },
   {
     "name": "Action Music Loop",
-    "authors": [
-      "AppPro"
-    ],
+    "authors": ["AppPro"],
     "usedFor": "Dust Valley music",
     "source": "https://opengameart.org/content/action-music-loop"
   },
   {
     "name": "Fast fight / battle music",
-    "authors": [
-      "Ville Nousiainen",
-      "Xythe",
-      "mutkanto"
-    ],
+    "authors": ["Ville Nousiainen", "Xythe", "mutkanto"],
     "usedFor": "Neon City music",
     "source": "https://opengameart.org/content/fast-fight-battle-music"
   },
   {
     "name": "Friendly Talk On a Robotic Battlefield",
-    "authors": [
-      "illin"
-    ],
+    "authors": ["illin"],
     "usedFor": "Orbit Station music",
     "source": "https://opengameart.org/content/friendly-talk-on-a-robotic-battlefield-looped"
   },
   {
     "name": "Heavy battle music",
-    "authors": [
-      "Davieplier"
-    ],
+    "authors": ["Davieplier"],
     "usedFor": "boss music",
     "source": "https://opengameart.org/content/heavy-battle-music"
   }
