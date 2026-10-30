@@ -46,7 +46,11 @@ const BEAT_LENGTH = 50;
 const INTRO = 34;
 /** Seconds of effective fire a wave is exposed to on its way to the squad. */
 const EXPOSURE = 4.2;
-const MAX_RUNNERS = 130;
+const MAX_RUNNERS = 150;
+/** Smallest crowd of a wave never grows beyond this, however large the squad gets. */
+const MAX_HORDE_FLOOR = 40;
+/** Runners keep at least this share of their base HP (half = one rifle shot). */
+const MIN_RUNNER_HP_SCALE = 0.5;
 const UNIT_DPS = BALANCE.squad.baseDamage * BALANCE.squad.baseFireRate;
 
 /** Planning model: expected squad strength while walking through the level. */
@@ -208,16 +212,13 @@ function buildWave(rng: Rng, params: GeneratorParams, budget: number, plan: Plan
     remaining -= share;
   }
   remaining = Math.max(budget * 0.35, remaining);
-  const runnerTarget = clamp(Math.round(plan.units * 0.9 + beat * 2), 8, MAX_RUNNERS);
+  // Waves are hordes: the HP budget buys many weak runners rather than a few tough ones.
+  // Runners die to a single rifle shot at the weakest, so the crowd melts satisfyingly.
   const runnerHp = ENEMIES.runner.hp;
-  let hpScale = remaining / (runnerTarget * runnerHp);
-  let count = runnerTarget;
-  if (hpScale < 1) {
-    // Small squads face small waves: the floor grows with the squad instead of being fixed.
-    const floor = clamp(Math.round(plan.units * 0.8), 2, 5);
-    count = clamp(Math.round(remaining / runnerHp), floor, MAX_RUNNERS);
-    hpScale = 1;
-  }
+  const hordeFloor = clamp(Math.round(4 + plan.units * 2 + beat * 3), 8, MAX_HORDE_FLOOR);
+  const affordable = Math.round(remaining / (runnerHp * MIN_RUNNER_HP_SCALE));
+  const count = clamp(Math.max(hordeFloor, affordable), hordeFloor, MAX_RUNNERS);
+  const hpScale = Math.max(MIN_RUNNER_HP_SCALE, remaining / (count * runnerHp));
   const pattern = rng.pick(['grid', 'grid', 'scatter', 'wedge'] as const);
   groups.unshift({ kind: 'runner', count, pattern, hpScale: Number(hpScale.toFixed(2)) });
   return groups;
