@@ -12,7 +12,6 @@ export default defineConfig({
       // The app shows its own "update available" toast and registers the worker itself.
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['icons/favicon-32.png', 'icons/apple-touch-icon.png'],
       manifest: {
         id: '/',
         name: 'LSG – Lane Shooting Game',
