@@ -34,6 +34,9 @@ import { THEMES, type WorldTheme } from './environment/themes.ts';
 
 const LANE_LENGTH = 320;
 const LANE_CENTER_Z = -LANE_LENGTH / 2 + 30;
+const GROUND_SIZE: [number, number] = [400, LANE_LENGTH + 200];
+/** World units covered by one repeat of the texture on the ground beside the lane. */
+const GROUND_TILE = 16;
 
 /** Owns the WebGL renderer, the static world (sky, lane, scenery, lights) and the camera. */
 export class SceneRenderer {
@@ -108,7 +111,7 @@ export class SceneRenderer {
     lane.receiveShadow = true;
     this.scene.add(lane);
 
-    const ground = new Mesh(new PlaneGeometry(400, LANE_LENGTH + 200), this.groundMaterial);
+    const ground = new Mesh(new PlaneGeometry(GROUND_SIZE[0], GROUND_SIZE[1]), this.groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(0, -0.04, LANE_CENTER_Z - 60);
     ground.receiveShadow = true;
@@ -203,6 +206,13 @@ export class SceneRenderer {
       this.laneMaterial.normalMap = normal;
       this.laneMaterial.normalScale = new Vector2(theme.lane.normalScale, theme.lane.normalScale);
       this.laneMaterial.needsUpdate = true;
+      // The same surface continues beside the lane, larger, so the ground is not a flat colour.
+      this.groundMaterial.map?.dispose();
+      const groundMap = diffuse.clone();
+      groundMap.repeat.set(GROUND_SIZE[0] / GROUND_TILE, GROUND_SIZE[1] / GROUND_TILE);
+      groundMap.needsUpdate = true;
+      this.groundMaterial.map = groundMap;
+      this.groundMaterial.needsUpdate = true;
     });
     const environment = this.loadEnvironment(theme.environment.hdri).then((env) => {
       if (this.theme !== theme) return;
@@ -219,6 +229,7 @@ export class SceneRenderer {
     const offset = (distance / this.laneTileSize) % 1;
     if (this.laneMaterial.map) this.laneMaterial.map.offset.y = offset;
     if (this.laneMaterial.normalMap) this.laneMaterial.normalMap.offset.y = offset;
+    if (this.groundMaterial.map) this.groundMaterial.map.offset.y = (distance / GROUND_TILE) % 1;
     this.scenery.update(distance);
   }
 

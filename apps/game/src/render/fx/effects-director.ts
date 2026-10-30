@@ -5,7 +5,7 @@ import { FACTOR_STEPS } from '../../sim/balance.ts';
 import { isGateBeneficial } from '../../sim/gates.ts';
 import type { WorldId } from '../../sim/level.ts';
 import type { Simulation } from '../../sim/simulation.ts';
-import type { EnemyKind, SimEvent } from '../../sim/types.ts';
+import type { EnemyKind, SimEvent, WeaponId } from '../../sim/types.ts';
 import type { CameraRig } from '../camera-rig.ts';
 import { ENEMY_COLORS, PALETTE } from '../palette.ts';
 import { DebrisSystem } from './debris-system.ts';
@@ -24,6 +24,13 @@ const DEBRIS_COUNT: Record<EnemyKind, number> = {
 };
 
 /** Enemy kinds whose individual hits show damage numbers (runners would only add clutter). */
+const MUZZLE_COLORS: Record<WeaponId, number> = {
+  rifle: 0xffd27a,
+  spread: 0xff9a3c,
+  laser: 0x36f5ff,
+  rocket: 0xff6a3c,
+};
+
 const SHOW_DAMAGE: ReadonlySet<EnemyKind> = new Set([
   'tank',
   'shield',
@@ -296,7 +303,10 @@ export class EffectsDirector {
     for (const event of events) {
       switch (event.type) {
         case 'shot':
-          if (this.muzzleBudget-- > 0) this.flash(event.x, 0.78, event.z - 0.35, 0xffd27a, 0.55, 0.05, 3);
+          if (this.muzzleBudget-- > 0) {
+            const color = MUZZLE_COLORS[event.weapon];
+            this.flash(event.x, 0.78, event.z - 0.5, color, 0.8, 0.06, 4);
+          }
           break;
         case 'enemyShot':
           this.flash(event.x, 0.9, event.z, PALETTE.enemyProjectile, 1.1, 0.12, 4);

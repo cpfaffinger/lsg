@@ -1,5 +1,4 @@
 import {
-  AdditiveBlending,
   CanvasTexture,
   Color,
   DoubleSide,
@@ -56,9 +55,10 @@ const fieldFragment = /* glsl */ `
     float scan = 0.5 + 0.5 * sin(world.y * 18.0 - uTime * 6.0);
     float sweep = smoothstep(0.0, 0.08, fract(vUv.y - uTime * 0.35)) * smoothstep(0.16, 0.08, fract(vUv.y - uTime * 0.35));
     float hex = hexEdge(world * 2.2 + vec2(0.0, uTime * 0.2));
-    float alpha = 0.12 + edge * edge * 0.55 + hex * 0.14 + scan * 0.05 + sweep * 0.25 + uPulse * 0.35;
-    vec3 color = uColor * (1.0 + edge * 1.5 + uPulse * 1.5);
-    gl_FragColor = vec4(color, clamp(alpha, 0.0, 0.9));
+    // Normal blending keeps the colour saturated on bright ground, where adding light washes out.
+    float alpha = 0.5 + edge * edge * 0.35 + hex * 0.12 + scan * 0.04 + sweep * 0.14 + uPulse * 0.2;
+    vec3 color = uColor * (0.75 + edge * 1.8 + hex * 0.4 + uPulse * 1.5);
+    gl_FragColor = vec4(color, clamp(alpha, 0.0, 0.95));
   }
 `;
 
@@ -132,7 +132,6 @@ export class GateView {
         transparent: true,
         depthWrite: false,
         side: DoubleSide,
-        blending: AdditiveBlending,
       }),
     );
     field.scale.set(width - 0.4, GATE_HEIGHT - 0.25, 1);
@@ -169,16 +168,16 @@ export class GateView {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.lineJoin = 'round';
-    ctx.font = `900 ${sub ? 128 : 150}px "Segoe UI", system-ui, sans-serif`;
-    ctx.lineWidth = 18;
-    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.font = `900 ${sub ? 136 : 176}px "Segoe UI", system-ui, sans-serif`;
+    ctx.lineWidth = 30;
+    ctx.strokeStyle = 'rgba(0,0,0,0.92)';
     const mainY = sub ? 100 : 128;
     ctx.strokeText(main, 256, mainY);
     ctx.fillStyle = '#ffffff';
     ctx.fillText(main, 256, mainY);
     if (sub) {
-      ctx.font = '800 48px "Segoe UI", system-ui, sans-serif';
-      ctx.lineWidth = 10;
+      ctx.font = '800 50px "Segoe UI", system-ui, sans-serif';
+      ctx.lineWidth = 14;
       ctx.strokeText(sub, 256, 200);
       ctx.fillText(sub, 256, 200);
     }

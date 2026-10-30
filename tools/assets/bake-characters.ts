@@ -140,7 +140,20 @@ async function bake(config: CharacterConfig): Promise<void> {
     const color = geometry.getAttribute('color') as BufferAttribute | undefined;
     const skinIndex = geometry.getAttribute('skinIndex') as BufferAttribute | undefined;
     const skinWeight = geometry.getAttribute('skinWeight') as BufferAttribute | undefined;
-    const transform = mesh instanceof SkinnedMesh ? mesh.bindMatrix : mesh.matrixWorld;
+    // Rigid parts follow one bone. The baked matrices expect bind-pose positions, while the
+    // scene shows a default pose that can differ, so go through the space of that bone.
+    let transform = mesh.matrixWorld;
+    if (mesh instanceof SkinnedMesh) {
+      transform = mesh.bindMatrix;
+    } else if (rigidBone !== null) {
+      const bone = kept[rigidBone] as Bone;
+      const inverse = skeleton.boneInverses[skeleton.bones.indexOf(bone)] as Matrix4;
+      transform = new Matrix4()
+        .copy(inverse)
+        .invert()
+        .multiply(new Matrix4().copy(bone.matrixWorld).invert())
+        .multiply(mesh.matrixWorld);
+    }
     const normalMatrix = new Matrix4().copy(transform);
     const vertices: Vertex[] = [];
     for (let i = 0; i < position.count; i++) {
@@ -175,6 +188,14 @@ async function bake(config: CharacterConfig): Promise<void> {
       });
     }
     const indices = geometry.index ? Array.from(geometry.index.array) : vertices.map((_, i) => i);
+    // A mirrored transform turns triangles inside out; flip them back so they are not culled.
+    if (transform.determinant() < 0) {
+      for (let i = 0; i + 2 < indices.length; i += 3) {
+        const first = indices[i] as number;
+        indices[i] = indices[i + 2] as number;
+        indices[i + 2] = first;
+      }
+    }
     parts.push({ vertices, indices });
   };
 

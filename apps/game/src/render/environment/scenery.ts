@@ -43,7 +43,7 @@ function sideX(rng: Rng, min: number, max: number): number {
 
 function desertStrip(rng: Rng, b: Builder): void {
   const sandstone = [0xb8743f, 0xc98a52, 0xa8653a, 0xd39b62];
-  for (let z = 0; z < STRIP_LENGTH; z += rng.range(4, 9)) {
+  for (let z = 0; z < STRIP_LENGTH; z += rng.range(2.2, 4.8)) {
     const x = sideX(rng, 0.5, 7);
     const size = rng.range(0.4, 1.4) * (Math.abs(x) > 9 ? 1.6 : 1);
     b.add(
@@ -56,7 +56,7 @@ function desertStrip(rng: Rng, b: Builder): void {
       },
     );
   }
-  for (let z = 0; z < STRIP_LENGTH; z += rng.range(10, 18)) {
+  for (let z = 0; z < STRIP_LENGTH; z += rng.range(6, 11)) {
     // Saguaro cactus.
     const x = sideX(rng, 1.5, 9);
     const h = rng.range(1.6, 3.2);

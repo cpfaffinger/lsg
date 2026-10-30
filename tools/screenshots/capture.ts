@@ -33,11 +33,11 @@ interface Shot {
 
 const SHOTS: Shot[] = [
   { name: 'menu', width: 1280, height: 720 },
-  { name: 'horde', width: 1280, height: 720, level: 4, units: 34, until: 'horde' },
-  { name: 'city', width: 1280, height: 720, level: 12, units: 90, until: 'horde' },
-  { name: 'boss', width: 1280, height: 720, level: 10, units: 120, until: 'boss' },
-  { name: 'station', width: 1280, height: 720, level: 23, units: 150, until: 'horde' },
-  { name: 'mobile', width: 430, height: 860, level: 8, units: 60, until: 'horde' },
+  { name: 'horde', width: 1280, height: 720, level: 4, units: 12, until: 'horde' },
+  { name: 'city', width: 1280, height: 720, level: 12, units: 30, until: 'horde' },
+  { name: 'boss', width: 1280, height: 720, level: 10, units: 40, until: 'boss' },
+  { name: 'station', width: 1280, height: 720, level: 23, units: 45, until: 'horde' },
+  { name: 'mobile', width: 430, height: 860, level: 8, units: 18, until: 'horde' },
   { name: 'shop', width: 430, height: 860, screen: 'shop' },
 ];
 
@@ -69,7 +69,7 @@ async function capture(page: Page, shot: Shot): Promise<void> {
         const ready = () =>
           until === 'boss'
             ? game.sim.enemies.some(
-                (e) => e.alive && (e.kind === 'boss' || e.kind === 'miniboss') && e.z > -24,
+                (e) => e.alive && (e.kind === 'boss' || e.kind === 'miniboss') && e.z > -62,
               )
             : game.sim.enemies.filter((e) => e.alive && e.z > -30).length >= 14;
         for (let i = 0; i < 1200 && game.sim.status === 'running'; i++) {
