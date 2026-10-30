@@ -27,6 +27,12 @@ Abweichungen vom ursprünglichen Plan, mit Begründung. Wo dieser Abschnitt und 
 | 2026-10-30 | M3 | **Kampagne aus einem Levelgenerator** statt 30 handgebauter JSON-Dateien; pro Level wird eine neue Mechanik vorgestellt | Konsistente Qualität, deterministisch, leicht erweiterbar |
 | 2026-10-30 | M3 | **Automatische Kalibrierung** (`tools/balance/tune.ts`): Schwierigkeit pro Level und Boss-Lebensenergie werden gegen drei Bot-Varianten gesucht | Handbalancing war zu sprunghaft; Ergebnis: guter Bot 30/30, durchschnittlicher 25/30, schwacher 18/30 |
 | 2026-10-30 | M3 | Tägliche Herausforderung bleibt optional (M9) | Endlos-Modus deckt den Wiederspielwert für 1.0 ab |
+| 2026-10-30 | M4 | Google-Login ohne `openid-client`: eigener Authorization-Code-Flow mit PKCE, State und Nonce, ID-Token-Prüfung mit `jose` gegen Googles JWKS | Wenig Code, volle Kontrolle, gut testbar mit einem simulierten Anbieter |
+| 2026-10-30 | M4 | **Test-Anmeldung im Admin-Bereich**, die einen echten Google-Rundlauf ausführt, ohne ein Spielerkonto anzulegen | Der Admin sieht vor dem Freischalten, ob alle Werte in der Google Console stimmen |
+| 2026-10-30 | M4 | Impressum und Datenschutzerklärung im Admin-Bereich editierbar, mit Vorlagen; erreichbar im Spiel unter `#imprint` / `#privacy` | Betreiber braucht keine Code-Änderung; die Datenschutz-URL wird im Google-Assistenten angezeigt |
+| 2026-10-30 | M4 | Erstes Admin-Konto: ohne `LSG_ADMIN_PASSWORD` zufälliges Passwort in `data/initial-admin-password.txt`, Wechsel beim ersten Login erzwungen | Stack startet ohne Vorarbeit und trotzdem ohne Standardpasswort |
+| 2026-10-30 | M4 | Sync-Regeln: erster Login importiert Gast-Fortschritt (Münzen addiert), danach optimistisches Locking mit Server-Revision; Konflikte werden ohne Fortschrittsverlust zusammengeführt | Kein Verlust bei Gerätewechsel oder parallelem Spielen |
+| 2026-10-30 | M4 | nginx reicht `Host` mit Port weiter (`$http_host`) | Sonst scheitert die Origin-Prüfung lokal auf `:8080` |
 
 ## 0. Getroffene Entscheidungen (2026-10-30)
 
