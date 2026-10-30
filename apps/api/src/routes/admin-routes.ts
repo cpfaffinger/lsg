@@ -103,12 +103,8 @@ export function registerAdminRoutes(app: FastifyInstance, ctx: AppContext, backu
     if (ctx.settings.getBool('maintenance_mode')) warnings.push('maintenance_mode');
     const lastBackup = backups.list()[0] ?? null;
     if (!lastBackup) warnings.push('no_backup');
-    let databaseBytes = 0;
-    try {
-      databaseBytes = fs.statSync(ctx.config.databaseFile).size;
-    } catch {
-      databaseBytes = 0;
-    }
+    // In-memory databases (tests) have no file; report 0 bytes then.
+    const databaseBytes = fs.existsSync(ctx.config.databaseFile) ? fs.statSync(ctx.config.databaseFile).size : 0;
     return {
       version: ctx.config.version,
       nodeVersion: process.version,
