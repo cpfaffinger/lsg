@@ -1,4 +1,5 @@
 import { BALANCE, FACTOR_NEUTRAL_INDEX, FACTOR_STEPS } from './balance.ts';
+import { formationSlot, visibleUnits } from './formation.ts';
 import type { Gate, GateOp, WeaponId } from './types.ts';
 
 export interface GateSpec {
@@ -79,6 +80,64 @@ export function addGateHits(gate: Gate, hits: number): number {
   }
   if (gate.value >= gate.maxValue) gate.progress = 0;
   return steps;
+}
+
+export interface GatePass {
+  gate: Gate;
+  /** Soldiers that walked through this gate. */
+  passed: number;
+  /** What those soldiers turned into (unit and multiplier gates), otherwise `passed`. */
+  result: number;
+}
+
+export interface GatePassResult {
+  next: GateTarget;
+  /** Gates at least one soldier walked through. */
+  passes: GatePass[];
+}
+
+/**
+ * Resolves a gate pair for a squad standing at `squadX`. Every soldier counts for the gate it
+ * walks through: a gate changes only its own soldiers, soldiers beside the gates stay as they
+ * are. Percent gates scale with the share of the squad that went through; a weapon gate needs
+ * at least half of the squad.
+ */
+export function resolveGatePass(target: GateTarget, squadX: number, gates: readonly Gate[]): GatePassResult {
+  const visible = visibleUnits(target.units);
+  const counts = gates.map(() => 0);
+  const slot = { x: 0, z: 0 };
+  for (let i = 0; i < visible; i++) {
+    formationSlot(i, target.units, slot);
+    const x = squadX + slot.x;
+    const index = gates.findIndex((gate) => Math.abs(x - gate.x) <= gate.width / 2);
+    const count = counts[index];
+    if (count !== undefined) counts[index] = count + 1;
+  }
+
+  // Only a part of a huge squad is simulated in formation; the rest follows proportionally.
+  const scale = visible > 0 ? target.units / visible : 0;
+  const next = { ...target };
+  const passes: GatePass[] = [];
+  let remaining = target.units;
+  gates.forEach((gate, index) => {
+    const passed = Math.min(remaining, Math.round((counts[index] ?? 0) * scale));
+    if (passed <= 0) return;
+    remaining -= passed;
+    const share = passed / target.units;
+    let result = passed;
+    if (gate.op === 'units' || gate.op === 'factor') {
+      result = applyGate({ ...target, units: passed }, gate.op, gate.value, null).units;
+    } else if (gate.op === 'weapon') {
+      if (share >= 0.5 && gate.weapon) next.weapon = gate.weapon;
+    } else {
+      const applied = applyGate(next, gate.op, Math.round(gate.value * share), null);
+      next.damageBonus = applied.damageBonus;
+      next.fireRateBonus = applied.fireRateBonus;
+    }
+    passes.push({ gate, passed, result });
+  });
+  next.units = Math.min(BALANCE.squad.maxUnits, remaining + passes.reduce((sum, p) => sum + p.result, 0));
+  return { next, passes };
 }
 
 /** Applies a gate to the squad stats and returns the new stats. */

@@ -359,11 +359,11 @@ export class EffectsDirector {
           const good = isGateBeneficial(event.op, event.value);
           const color =
             event.op === 'weapon' ? PALETTE.gateWeapon : good ? PALETTE.gateGood : PALETTE.gateBad;
-          this.ground.shockwave(squadX, 0, 5, color, 3, 0.5);
+          this.ground.shockwave(event.x, 0, 5, color, 3, 0.5);
           for (let i = 0; i < 40; i++) {
             const a = (i / 40) * Math.PI * 2;
             this.glow.spawn({
-              x: squadX + Math.cos(a) * 0.5,
+              x: event.x + Math.cos(a) * 0.5,
               y: 0.6,
               z: Math.sin(a) * 0.5,
               vx: Math.cos(a) * 7,
@@ -377,7 +377,7 @@ export class EffectsDirector {
             });
           }
           const label = this.gatePassLabel(event);
-          if (label) this.text.spawn(label, squadX, 2.6, 0, good ? 0x5dff9b : 0xff6474, 1.3, 1.1, 2.5);
+          if (label) this.text.spawn(label, event.x, 2.6, 0, good ? 0x5dff9b : 0xff6474, 1.3, 1.1, 2.5);
           if (!good) this.shake(0.25);
           break;
         }

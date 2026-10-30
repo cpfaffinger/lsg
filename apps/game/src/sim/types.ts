@@ -119,6 +119,10 @@ export type SimEvent =
       op: GateOp;
       value: number;
       weapon: WeaponId | null;
+      /** Soldiers that walked through this gate and what they turned into. */
+      passed: number;
+      result: number;
+      /** Whole squad before and after the gate pair. */
       before: number;
       after: number;
       x: number;

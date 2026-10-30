@@ -1,6 +1,6 @@
 import { BALANCE, ENEMIES, WEAPONS } from './balance.ts';
 import { formationSlot, shooterStride, squadDepth, squadHalfWidth, type SlotOffset } from './formation.ts';
-import { addGateHits, applyGate, gateMaxValue, type GateSpec } from './gates.ts';
+import { addGateHits, gateMaxValue, resolveGatePass, type GateSpec, type GateTarget } from './gates.ts';
 import type { LevelDef, Segment, WaveGroup } from './level.ts';
 import { Rng } from './rng.ts';
 import { SpatialGrid } from './spatial-grid.ts';
@@ -437,25 +437,17 @@ export class Simulation {
       gate.z += scrollDelta;
       gate.hitTimer += dt;
       if (gate.prevZ < SQUAD_FRONT_Z && gate.z >= SQUAD_FRONT_Z) {
-        if (Math.abs(this.squadX - gate.x) <= gate.width / 2) this.passGate(gate);
+        this.passGatePair(gate.pairId);
       }
       if (gate.z > DESPAWN_Z) gate.alive = false;
     }
   }
 
-  private passGate(gate: Gate): void {
+  private passGatePair(pairId: number): void {
     const before = this.units;
-    const next = applyGate(
-      {
-        units: this.units,
-        damageBonus: this.damageBonus,
-        fireRateBonus: this.fireRateBonus,
-        weapon: this.weapon,
-      },
-      gate.op,
-      gate.value,
-      gate.weapon,
-    );
+    const pair = this.gates.filter((gate) => gate.alive && gate.pairId === pairId);
+    const { next, passes } = resolveGatePass(this.gateTarget(), this.squadX, pair);
+    if (passes.length === 0) return;
     this.units = next.units;
     this.damageBonus = next.damageBonus;
     this.fireRateBonus = next.fireRateBonus;
@@ -463,18 +455,30 @@ export class Simulation {
     this.stats.gatesPassed++;
     this.stats.peakUnits = Math.max(this.stats.peakUnits, this.units);
     if (this.units < before) this.stats.unitsLost += before - this.units;
-    this.emit({
-      type: 'gatePassed',
-      op: gate.op,
-      value: gate.value,
-      weapon: gate.weapon,
-      before,
-      after: this.units,
-      x: gate.x,
-    });
-    for (const other of this.gates) {
-      if (other.pairId === gate.pairId) other.alive = false;
+    for (const { gate, passed, result } of passes) {
+      this.emit({
+        type: 'gatePassed',
+        op: gate.op,
+        value: gate.value,
+        weapon: gate.weapon,
+        passed,
+        result,
+        before,
+        after: this.units,
+        x: gate.x,
+      });
     }
+    for (const gate of pair) gate.alive = false;
+  }
+
+  /** The squad stats gates work on. */
+  gateTarget(): GateTarget {
+    return {
+      units: this.units,
+      damageBonus: this.damageBonus,
+      fireRateBonus: this.fireRateBonus,
+      weapon: this.weapon,
+    };
   }
 
   // ---------------------------------------------------------------- obstacles

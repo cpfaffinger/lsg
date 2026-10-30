@@ -1,22 +1,26 @@
 import { FACTOR_STEPS } from '../../apps/game/src/sim/balance.ts';
-import { applyGate } from '../../apps/game/src/sim/gates.ts';
+import { resolveGatePass } from '../../apps/game/src/sim/gates.ts';
 import type { LevelDef } from '../../apps/game/src/sim/level.ts';
 import { Simulation } from '../../apps/game/src/sim/simulation.ts';
 import { DEFAULT_MODIFIERS, type Gate, type RunModifiers } from '../../apps/game/src/sim/types.ts';
 
 const DT = 1 / 60;
 
-/** Value of passing a gate now, measured in "effective units" for a greedy bot. */
-function gateScore(sim: Simulation, gate: Gate): number {
-  const target = {
-    units: sim.units,
-    damageBonus: sim.damageBonus,
-    fireRateBonus: sim.fireRateBonus,
-    weapon: sim.weapon,
-  };
-  const next = applyGate(target, gate.op, gate.value, gate.weapon);
+/** Value of walking through a gate pair at squad position `x`, in "effective units". */
+function passScore(sim: Simulation, pair: readonly Gate[], x: number): number {
+  const target = sim.gateTarget();
+  const { next } = resolveGatePass(target, x, pair);
   const power = (t: typeof target) => t.units * (1 + t.damageBonus / 100) * (1 + t.fireRateBonus / 100);
   return power(next) - power(target);
+}
+
+/** Best steering target for a gate pair: straight through either gate, the middle or an edge. */
+function bestGateX(sim: Simulation, pair: readonly Gate[]): number {
+  const limit = 5 - sim.halfWidth;
+  const options = [...pair.map((g) => g.x), 0, -limit, limit].map((x) =>
+    Math.max(-limit, Math.min(limit, x)),
+  );
+  return options.reduce((a, b) => (passScore(sim, pair, b) > passScore(sim, pair, a) ? b : a));
 }
 
 export type BotSkill = 'good' | 'average' | 'poor';
@@ -48,7 +52,8 @@ export function playLevel(
     return rngState / 4294967296;
   };
   let lastSample = -1;
-  for (let t = 0; t < 600 && sim.status === 'running'; t += DT) {
+  let step = 0;
+  for (let t = 0; t < 600 && sim.status === 'running'; t += DT, step++) {
     const lookahead = lookaheadOverride ?? (skill === 'good' ? 18 : 45);
     const upcoming = sim.gates.filter((g) => g.alive && g.z < 0 && g.z > -lookahead);
     let targetX = 0;
@@ -56,9 +61,10 @@ export function playLevel(
       const pairId = upcoming.reduce((a, b) => (b.z > a.z ? b : a)).pairId;
       const pair = upcoming.filter((g) => g.pairId === pairId);
       let choice = decided.get(pairId);
-      if (choice === undefined || skill === 'good') {
+      // Good players keep correcting; re-evaluating a few times per second is enough for that.
+      if (choice === undefined || (skill === 'good' && step % 6 === 0)) {
         if (skill === 'poor') choice = pair[Math.floor(random() * pair.length)]?.x ?? 0;
-        else choice = pair.reduce((a, b) => (gateScore(sim, b) > gateScore(sim, a) ? b : a)).x;
+        else choice = bestGateX(sim, pair);
         decided.set(pairId, choice);
       }
       targetX = choice;

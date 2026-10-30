@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { FACTOR_NEUTRAL_INDEX } from './balance.ts';
-import { addGateHits, applyGate, gateMaxValue, gateStepCost, isGateBeneficial } from './gates.ts';
+import {
+  addGateHits,
+  applyGate,
+  gateMaxValue,
+  gateStepCost,
+  isGateBeneficial,
+  resolveGatePass,
+} from './gates.ts';
 import type { Gate, GateOp } from './types.ts';
 
 function makeGate(op: GateOp, value: number): Gate {
@@ -22,6 +29,56 @@ function makeGate(op: GateOp, value: number): Gate {
 }
 
 const base = { units: 10, damageBonus: 0, fireRateBonus: 0, weapon: 'rifle' as const };
+
+describe('gate passage', () => {
+  const left = { ...makeGate('factor', FACTOR_NEUTRAL_INDEX + 1), x: -2.5, width: 4.4 };
+  const right = { ...makeGate('units', -2), x: 2.5, width: 4.4 };
+
+  it('changes only the soldiers that walked through a gate', () => {
+    const target = { ...base, units: 30 };
+    const { next, passes } = resolveGatePass(target, 0, [left, right]);
+    expect(passes).toHaveLength(2);
+    const [doubled, reduced] = passes;
+    expect(doubled?.result).toBe((doubled?.passed ?? 0) * 2);
+    expect(reduced?.result).toBe((reduced?.passed ?? 0) - 2);
+    const beside = 30 - (doubled?.passed ?? 0) - (reduced?.passed ?? 0);
+    expect(next.units).toBe(beside + (doubled?.result ?? 0) + (reduced?.result ?? 0));
+  });
+
+  it('sends a small squad through one gate completely', () => {
+    const { next, passes } = resolveGatePass({ ...base, units: 5 }, -2.5, [left, right]);
+    expect(passes.map((p) => p.passed)).toEqual([5]);
+    expect(next.units).toBe(10);
+  });
+
+  it('leaves soldiers untouched when nobody reaches a gate', () => {
+    const { next, passes } = resolveGatePass({ ...base, units: 1 }, 0, [left, right]);
+    expect(passes).toHaveLength(0);
+    expect(next.units).toBe(1);
+  });
+
+  it('scales percent gates with the share of the squad', () => {
+    const damage = { ...makeGate('damage', 20), x: -2.5, width: 4.4 };
+    const whole = resolveGatePass({ ...base, units: 4 }, -2.5, [damage]);
+    expect(whole.next.damageBonus).toBe(20);
+    const part = resolveGatePass({ ...base, units: 30 }, -2.5, [damage]);
+    expect(part.next.damageBonus).toBeGreaterThan(0);
+    expect(part.next.damageBonus).toBeLessThan(20);
+  });
+
+  it('needs half of the squad for a weapon gate', () => {
+    const weapon = { ...makeGate('weapon', 0), weapon: 'laser' as const, x: 4.5, width: 1 };
+    expect(resolveGatePass({ ...base, units: 30 }, 0, [weapon]).next.weapon).toBe('rifle');
+    expect(resolveGatePass({ ...base, units: 1 }, 4.5, [weapon]).next.weapon).toBe('laser');
+  });
+
+  it('counts huge squads proportionally', () => {
+    const huge = resolveGatePass({ ...base, units: 3000 }, 0, [left, right]);
+    const passed = huge.passes.reduce((sum, p) => sum + p.passed, 0);
+    expect(passed).toBeGreaterThan(2000);
+    expect(passed).toBeLessThanOrEqual(3000);
+  });
+});
 
 describe('gate shooting', () => {
   it('raises a unit gate step by step with growing costs', () => {
