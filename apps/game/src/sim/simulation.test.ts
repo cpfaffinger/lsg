@@ -99,7 +99,7 @@ describe('Simulation', () => {
   });
 
   it('a sensible strategy clears the prototype level', () => {
-    const sim = new Simulation(PROTOTYPE_LEVEL);
+    const sim = new Simulation(PROTOTYPE_LEVEL, { ...DEFAULT_MODIFIERS, startUnits: 12 });
     // Greedy steering: head for the gate that currently gives the most units, else centre.
     runToEnd(sim, (s) => {
       const upcoming = s.gates.filter((g) => g.alive && g.z < 0 && g.z > -40);

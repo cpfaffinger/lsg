@@ -30,6 +30,8 @@ export interface StepInput {
 }
 
 const MAX_PROJECTILES = 1400;
+/** Largest wave a horde can grow to; also the limit of what stays readable on screen. */
+const MAX_HORDE = 220;
 const ENEMY_PROJECTILE_SPEED = 17;
 const SQUAD_FRONT_Z = SQUAD_Z - 0.45;
 /** Enemies closer than this are auto-targeted; farther away the squad shoots straight. */
@@ -87,6 +89,9 @@ export class Simulation {
   private nextId = 1;
   private shotAccumulator = 0;
   private shooterCursor = 0;
+  private coinBank = 0;
+  /** Position of the last thing in the level; the run ends when it is dealt with. */
+  private readonly endDistance: number;
   private readonly grid = new SpatialGrid(2);
   private readonly slot: SlotOffset = { x: 0, z: 0 };
   private bossSummonTimer = 0;
@@ -99,6 +104,7 @@ export class Simulation {
     this.weapon = modifiers.startWeapon ?? this.weapon;
     this.stats.peakUnits = this.units;
     this.segments = [...level.segments].sort((a, b) => a.at - b.at);
+    this.endDistance = this.segments[this.segments.length - 1]?.at ?? level.length;
   }
 
   /** Returns and clears all events emitted since the last call. */
@@ -109,7 +115,7 @@ export class Simulation {
   }
 
   get progress(): number {
-    return Math.min(1, this.distance / Math.max(1, this.level.length));
+    return Math.min(1, this.distance / Math.max(1, this.endDistance));
   }
 
   get halfWidth(): number {
@@ -190,6 +196,10 @@ export class Simulation {
   private fire(dt: number): void {
     if (this.units <= 0) return;
     const weapon = WEAPONS[this.weapon];
+    if (!this.hasTarget(weapon.range)) {
+      this.shotAccumulator = 0;
+      return;
+    }
     const shooters = Math.min(this.units, BALANCE.squad.shooterCap);
     // Units beyond the shooter cap still contribute damage through the scale factor.
     const damageScale = this.units / shooters;
@@ -232,6 +242,16 @@ export class Simulation {
       }
       this.emit({ type: 'shot', x: ox, z: oz, weapon: this.weapon, slot });
     }
+  }
+
+  /** The squad only opens fire when something it can reach is ahead of it. */
+  private hasTarget(range: number): boolean {
+    const far = SQUAD_Z - range;
+    return (
+      this.enemies.some((e) => e.alive && e.z > far && e.z < SQUAD_Z + 1) ||
+      this.gates.some((g) => g.alive && g.op !== 'weapon' && g.z > far && g.z < SQUAD_FRONT_Z) ||
+      this.obstacles.some((o) => o.alive && o.kind === 'barrel' && o.z > far && o.z < SQUAD_FRONT_Z)
+    );
   }
 
   /** Enemies close enough to be auto-targeted this step, nearest first. */
@@ -367,20 +387,23 @@ export class Simulation {
     const pattern = group.pattern ?? 'grid';
     const hpScale = group.hpScale ?? 1;
     const perRow = Math.max(1, Math.floor(width / spacing));
-    for (let i = 0; i < group.count; i++) {
+    const count = group.perUnit
+      ? Math.max(group.count, Math.min(MAX_HORDE, Math.round(this.units * group.perUnit)))
+      : group.count;
+    for (let i = 0; i < count; i++) {
       let x = centerX;
       let dz = 0;
       switch (pattern) {
         case 'grid': {
           const row = Math.floor(i / perRow);
-          const inRow = Math.min(perRow, group.count - row * perRow);
+          const inRow = Math.min(perRow, count - row * perRow);
           x = centerX + ((i % perRow) - (inRow - 1) / 2) * spacing;
           dz = row * spacing;
           break;
         }
         case 'line':
-          x = centerX + (i - (group.count - 1) / 2) * (width / Math.max(1, group.count - 1 || 1));
-          if (group.count === 1) x = centerX;
+          x = centerX + (i - (count - 1) / 2) * (width / Math.max(1, count - 1 || 1));
+          if (count === 1) x = centerX;
           break;
         case 'column':
           dz = i * spacing * 1.4;
@@ -394,7 +417,7 @@ export class Simulation {
         }
         case 'scatter':
           x = centerX + this.rng.range(-width / 2, width / 2);
-          dz = this.rng.range(0, Math.max(4, group.count * 0.35));
+          dz = this.rng.range(0, Math.max(4, count * 0.18));
           break;
       }
       x = clamp(x, -LANE_HALF_WIDTH + def.radius, LANE_HALF_WIDTH - def.radius);
@@ -670,7 +693,10 @@ export class Simulation {
   private killEnemy(enemy: Enemy, byContact: boolean): void {
     if (!enemy.alive) return;
     enemy.alive = false;
-    const coins = byContact ? 0 : Math.round(enemy.coins * this.modifiers.coinMultiplier);
+    // Hordes pay in small fractions; whole coins are handed out as they add up.
+    if (!byContact) this.coinBank += enemy.coins * this.modifiers.coinMultiplier;
+    const coins = Math.floor(this.coinBank);
+    this.coinBank -= coins;
     if (!byContact) {
       this.stats.kills++;
       this.stats.coins += coins;
@@ -847,9 +873,14 @@ export class Simulation {
       this.emit({ type: 'levelFailed' });
       return;
     }
+    // The level is over as soon as nothing is left to shoot at or walk through.
     const allSpawned = this.nextSegment >= this.segments.length;
-    const hostilesLeft = this.enemies.some((e) => e.alive);
-    if (allSpawned && !hostilesLeft && this.distance >= this.level.length && this.bossId === null) {
+    const leftAhead =
+      this.enemies.some((e) => e.alive) ||
+      this.gates.some((g) => g.alive && g.z < SQUAD_FRONT_Z) ||
+      this.obstacles.some((o) => o.alive && o.z < SQUAD_FRONT_Z);
+    const started = this.segments.length > 0 || this.distance >= this.level.length;
+    if (allSpawned && started && !leftAhead && this.bossId === null) {
       this.status = 'won';
       this.emit({ type: 'levelComplete' });
     }

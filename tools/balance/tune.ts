@@ -62,7 +62,8 @@ function averageWins(level: number, difficulty: number, bossHp?: number): boolea
 function tuneDifficulty(level: number, bossHp: number | undefined): number {
   const good = (d: number) => evaluate(level, d, bossHp).survival >= targetSurvival(level);
   let lo = 0.03;
-  let hi = 1.2;
+  // Early levels stay gentle even when competent bots could take more: newcomers play them.
+  let hi = Math.min(1.2, 0.3 + level * 0.018);
   const requireAverage = averageWins(level, lo, bossHp);
   if (!requireAverage) console.warn(`level ${level}: average bot cannot win even at difficulty ${lo}`);
   const passes = (d: number) => good(d) && (!requireAverage || averageWins(level, d, bossHp));

@@ -40,7 +40,7 @@ for (let n = 1; n <= CAMPAIGN_LENGTH; n++) {
   while (!won && attempts < MAX_ATTEMPTS) {
     attempts++;
     const modifiers = modifiersFor(save);
-    const lookahead = skill === 'poor' ? undefined : ATTEMPT_LOOKAHEAD[attempts - 1];
+    const lookahead = ATTEMPT_LOOKAHEAD[attempts - 1];
     const result = playLevel(campaignLevel(n), modifiers, skill, skill === 'good' ? undefined : lookahead);
     won = result.status === 'won';
     const reward = rewardFor(save, n, won, result.units, result.stats, modifiers.coinMultiplier);

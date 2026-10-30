@@ -46,7 +46,7 @@ export function playLevel(
   let bossStart = -1;
   let bossSeconds = 0;
   const decided = new Map<number, number>();
-  let rngState = level.seed;
+  let rngState = level.seed + (lookaheadOverride ?? 0);
   const random = () => {
     rngState = (rngState * 1664525 + 1013904223) >>> 0;
     return rngState / 4294967296;

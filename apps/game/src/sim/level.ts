@@ -11,6 +11,8 @@ export interface WaveGroup {
   pattern?: WavePattern;
   /** Multiplies the base HP of the enemy kind. */
   hpScale?: number;
+  /** Hordes grow with the squad: at least this many enemies per soldier when the wave spawns. */
+  perUnit?: number;
   /** Centre of the group across the lane; default 0. */
   x?: number;
   /** Width of the group across the lane; default: full lane. */

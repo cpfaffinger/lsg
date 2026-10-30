@@ -48,7 +48,7 @@ const INTRO = 34;
 const EXPOSURE = 4.2;
 const MAX_RUNNERS = 150;
 /** Smallest crowd of a wave never grows beyond this, however large the squad gets. */
-const MAX_HORDE_FLOOR = 40;
+const MAX_HORDE_FLOOR = 60;
 /** Runners keep at least this share of their base HP (half = one rifle shot). */
 const MIN_RUNNER_HP_SCALE = 0.5;
 const UNIT_DPS = BALANCE.squad.baseDamage * BALANCE.squad.baseFireRate;
@@ -198,10 +198,11 @@ function buildWave(rng: Rng, params: GeneratorParams, budget: number, plan: Plan
     const affordable = Math.floor(share / baseHp);
     if (affordable < 1) {
       if (!spotlight) continue;
-      share = baseHp;
+      // The level that introduces a kind shows one, at reduced strength for the small squad.
+      share = baseHp * 0.45;
     }
     const count = Math.max(1, Math.min(rng.int(special.count[0], special.count[1]), affordable));
-    const hpScale = Math.max(1, share / (count * baseHp));
+    const hpScale = Math.max(affordable < 1 ? 0.45 : 1, share / (count * baseHp));
     groups.push({
       kind: special.kind,
       count,
@@ -215,12 +216,21 @@ function buildWave(rng: Rng, params: GeneratorParams, budget: number, plan: Plan
   // Waves are hordes: the HP budget buys many weak runners rather than a few tough ones.
   // Runners die to a single rifle shot at the weakest, so the crowd melts satisfyingly.
   const runnerHp = ENEMIES.runner.hp;
-  const hordeFloor = clamp(Math.round(4 + plan.units * 2 + beat * 3), 8, MAX_HORDE_FLOOR);
+  // The floor follows the difficulty too: the very first wave decides whether a small squad gets
+  // the chance to grow, so tuning must be able to shrink it.
+  const hordeShare = 0.5 + params.difficulty * 1.6;
+  const hordeFloor = clamp(Math.round((6 + plan.units * 2.5 + beat * 5) * hordeShare), 6, MAX_HORDE_FLOOR);
   const affordable = Math.round(remaining / (runnerHp * MIN_RUNNER_HP_SCALE));
   const count = clamp(Math.max(hordeFloor, affordable), hordeFloor, MAX_RUNNERS);
   const hpScale = Math.max(MIN_RUNNER_HP_SCALE, remaining / (count * runnerHp));
   const pattern = rng.pick(['grid', 'grid', 'scatter', 'wedge'] as const);
-  groups.unshift({ kind: 'runner', count, pattern, hpScale: Number(hpScale.toFixed(2)) });
+  groups.unshift({
+    kind: 'runner',
+    count,
+    pattern,
+    hpScale: Number(hpScale.toFixed(2)),
+    perUnit: Number((1 + params.difficulty * 5).toFixed(2)),
+  });
   return groups;
 }
 
@@ -268,7 +278,7 @@ export function generateLevel(params: GeneratorParams): LevelDef {
     world: params.world,
     seed: params.seed,
     scrollSpeed: params.scrollSpeed,
-    length: end + (params.finale === 'none' ? 10 : 20),
+    length: end + (params.finale === 'none' ? 0 : 20),
     segments,
   };
 }
