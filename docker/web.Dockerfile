@@ -14,6 +14,9 @@ COPY tsconfig.base.json ./
 COPY packages/shared packages/shared
 COPY apps/game apps/game
 COPY apps/admin apps/admin
+# Identifies this build for the update check in the game.
+ARG LSG_BUILD_ID=
+ENV LSG_BUILD_ID=$LSG_BUILD_ID
 RUN npm run build -w @lsg/game && npm run build -w @lsg/admin
 
 FROM nginx:1.29-alpine

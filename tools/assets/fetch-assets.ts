@@ -3,8 +3,8 @@
  *
  *   node tools/assets/fetch-assets.ts
  *
- * Files land in apps/game/public/media/ and a provenance list is written to
- * apps/game/public/media/credits.json (also used for the in-game credits).
+ * Files land in apps/game/src/media/ and a provenance list is written to
+ * apps/game/src/media/credits.json (also used for the in-game credits).
  * All Poly Haven assets are CC0 (https://polyhaven.com/license).
  */
 import fs from 'node:fs';
@@ -37,7 +37,7 @@ const ASSETS: AssetRequest[] = [
   },
 ];
 
-const OUT = path.resolve('apps/game/public/media');
+const OUT = path.resolve('apps/game/src/media');
 const RESOLUTION = '1k';
 
 async function json(url: string): Promise<Record<string, unknown>> {

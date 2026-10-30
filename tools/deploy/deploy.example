@@ -1,0 +1,8 @@
+# Copy to .deploy.local in the project root. That file is git-ignored.
+LSG_DEPLOY_HOST=user@server.example.com
+LSG_DEPLOY_PORT=22
+LSG_DEPLOY_HOSTKEY=SHA256:...
+LSG_DEPLOY_KEY=/path/to/key.ppk
+LSG_DEPLOY_DIR=/etc/docker/compose/lsg
+LSG_DEPLOY_SCP=pscp
+LSG_DEPLOY_SSH=plink

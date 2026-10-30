@@ -5,11 +5,11 @@ Ad-free, high-polish 3D lane shooter for the browser. Concept and roadmap (Germa
 ## Hard constraints
 
 - All code, comments, identifiers, file names, commit messages, DB names and API paths in **English**. German only in `docs/` and `de.json`.
-- **Docker Compose is mandatory.** Docker Engine runs inside WSL Debian: `wsl -d Debian --cd /mnt/c/Users/cp/local/lsg -- docker compose ...`.
+- **Docker Compose is mandatory.** Docker Engine runs inside WSL Debian: `wsl -d Debian --cd <project path> -- docker compose ...`.
 - **No named Docker volumes.** Persistent data uses bind mounts relative to `docker-compose.yml` under `./data/` (git-ignored).
 - The stack exposes **exactly one HTTP port** (`web`, `LSG_HTTP_PORT`, default 8080). TLS, certificates and the outer reverse proxy (Cloudflare) are out of scope.
 - Public URL/domain is configured in the admin area (`public_url` setting); client IP comes from `CF-Connecting-IP`.
-- Git is local only, branch `master`, no remote. Commit after every completed step.
+- Branch `master`, remote `origin` is the **public** GitHub repo `cpfaffinger/lsg`. Commit after every completed step and never commit secrets, server names, ports or anything from `data/`; private notes go into `*.local.md` (git-ignored).
 - No purchased assets: generated procedurally or downloaded CC0/CC-BY, every asset logged in `docs/ASSETS.md`.
 - No ads, no tracking, no real-money purchases. Guest mode works fully offline; Google login only syncs progress.
 

@@ -1,3 +1,4 @@
+import { mediaUrl } from '../../media.ts';
 import type { WorldId } from '../../sim/level.ts';
 
 export interface WorldTheme {
@@ -24,8 +25,6 @@ export interface WorldTheme {
   grading: { saturation: number; contrast: number; vignette: number; bloom: number };
 }
 
-const MEDIA = '/media';
-
 export const THEMES: Record<WorldId, WorldTheme> = {
   desert: {
     id: 'desert',
@@ -33,11 +32,11 @@ export const THEMES: Record<WorldId, WorldTheme> = {
     fog: { color: 0xf0cf9e, near: 70, far: 230 },
     sun: { color: 0xffe2b0, intensity: 2.6, direction: [-0.45, 0.75, 0.35] },
     hemisphere: { sky: 0xbfe0ff, ground: 0xc79a62, intensity: 0.6 },
-    environment: { hdri: `${MEDIA}/hdri/goegap_1k.hdr`, intensity: 0.6 },
+    environment: { hdri: mediaUrl('hdri/goegap_1k.hdr'), intensity: 0.6 },
     exposure: 0.95,
     lane: {
-      diffuse: `${MEDIA}/textures/aerial_beach_01/diff_1k.jpg`,
-      normal: `${MEDIA}/textures/aerial_beach_01/nor_1k.jpg`,
+      diffuse: mediaUrl('textures/aerial_beach_01/diff_1k.jpg'),
+      normal: mediaUrl('textures/aerial_beach_01/nor_1k.jpg'),
       tint: 0xf0d2a8,
       tileSize: 7,
       roughness: 0.95,
@@ -61,11 +60,11 @@ export const THEMES: Record<WorldId, WorldTheme> = {
     fog: { color: 0x1d1033, near: 55, far: 190 },
     sun: { color: 0x9db8ff, intensity: 0.8, direction: [0.35, 0.8, 0.25] },
     hemisphere: { sky: 0x6a4cff, ground: 0x1a1020, intensity: 0.5 },
-    environment: { hdri: `${MEDIA}/hdri/shanghai_bund_1k.hdr`, intensity: 0.55 },
+    environment: { hdri: mediaUrl('hdri/shanghai_bund_1k.hdr'), intensity: 0.55 },
     exposure: 1.05,
     lane: {
-      diffuse: `${MEDIA}/textures/asphalt_02/diff_1k.jpg`,
-      normal: `${MEDIA}/textures/asphalt_02/nor_1k.jpg`,
+      diffuse: mediaUrl('textures/asphalt_02/diff_1k.jpg'),
+      normal: mediaUrl('textures/asphalt_02/nor_1k.jpg'),
       tint: 0xa8a8c0,
       tileSize: 6,
       roughness: 0.55,
@@ -82,11 +81,11 @@ export const THEMES: Record<WorldId, WorldTheme> = {
     fog: { color: 0x0a1024, near: 60, far: 210 },
     sun: { color: 0xd8f0ff, intensity: 2.4, direction: [0.5, 0.7, -0.2] },
     hemisphere: { sky: 0x8fd6ff, ground: 0x10142a, intensity: 0.5 },
-    environment: { hdri: `${MEDIA}/hdri/studio_small_08_1k.hdr`, intensity: 0.9 },
+    environment: { hdri: mediaUrl('hdri/studio_small_08_1k.hdr'), intensity: 0.9 },
     exposure: 1.05,
     lane: {
-      diffuse: `${MEDIA}/textures/blue_metal_plate/diff_1k.jpg`,
-      normal: `${MEDIA}/textures/blue_metal_plate/nor_1k.jpg`,
+      diffuse: mediaUrl('textures/blue_metal_plate/diff_1k.jpg'),
+      normal: mediaUrl('textures/blue_metal_plate/nor_1k.jpg'),
       tint: 0xb0c4e8,
       tileSize: 5,
       roughness: 0.4,

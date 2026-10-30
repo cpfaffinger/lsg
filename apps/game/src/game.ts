@@ -488,7 +488,7 @@ export class Game {
     const { frames, seconds, slow } = this.framePerf;
     const settings = this.settings.get();
     const file = this.recorder.build(this.sim, {
-      gameVersion: __LSG_VERSION__,
+      gameVersion: `${__LSG_VERSION__}+${__LSG_BUILD__}`,
       mode: this.mode.kind,
       client: {
         userAgent: navigator.userAgent,

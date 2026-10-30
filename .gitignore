@@ -16,6 +16,10 @@ coverage/
 assets-src/downloads/
 assets-src/tmp/
 
+# Private operations notes (server names, ports); never publish these
+*.local.md
+*.local
+
 # Editor / OS
 .vscode/
 .idea/

@@ -32,6 +32,8 @@ services:
     build:
       context: .
       dockerfile: docker/web.Dockerfile
+      args:
+        LSG_BUILD_ID: ${LSG_BUILD_ID:-}
     image: lsg-web:latest
     container_name: lsg-web
     restart: unless-stopped

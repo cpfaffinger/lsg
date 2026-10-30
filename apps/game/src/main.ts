@@ -2,6 +2,7 @@ import './styles.css';
 import './styles/menus.css';
 import { Game } from './game.ts';
 import { initLocale, t } from './i18n/i18n.ts';
+import { mediaUrl } from './media.ts';
 import { AccountService } from './net/account-service.ts';
 import { buildAccountPanel, buildLegalPanel } from './ui/account-screens.ts';
 import { button, h } from './ui/dom.ts';
@@ -54,7 +55,7 @@ async function boot(): Promise<void> {
   wireAccount(game, account, ui);
   game.start();
   hideBootScreen();
-  registerServiceWorker(ui);
+  setupUpdates(game, ui);
   // Config and session load in the background; the game never waits for the server.
   void account.init().then(() => {
     if (account.loginResult) {
@@ -73,35 +74,88 @@ async function boot(): Promise<void> {
   }
 }
 
-/** Offline support: precached app shell, "update available" toast, "ready offline" toast. */
-function registerServiceWorker(ui: HTMLElement): void {
-  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
-  void import('virtual:pwa-register').then(({ registerSW }) => {
-    const update = registerSW({
-      onNeedRefresh() {
-        const toast = h(
-          'div',
-          { class: 'toast info update-toast', attrs: { role: 'status' } },
-          t('app.updateAvailable'),
-        );
-        toast.append(button(t('app.update'), () => void update(true), 'btn small primary'));
-        ui.append(toast);
-      },
-      onOfflineReady() {
-        showToast(ui, t('app.offlineReady'), 'ok');
-      },
+/** How often an open game asks the server for a newer build. */
+const VERSION_POLL_MS = 2 * 60 * 1000;
+
+/**
+ * Keeps an open game up to date: the service worker provides offline play, /version.json tells
+ * the game that a newer build is online. The player is asked in a toast, never interrupted in a
+ * running level.
+ */
+function setupUpdates(game: Game, ui: HTMLElement): void {
+  if (!import.meta.env.PROD) return;
+  let applyUpdate = (): void => location.reload();
+  let refreshWorker = (): void => undefined;
+  let available = false;
+  let toastShown = false;
+
+  const offer = (): void => {
+    available = true;
+    if (toastShown || !game.inMenu) return;
+    toastShown = true;
+    const toast = h(
+      'div',
+      { class: 'toast info update-toast', attrs: { role: 'status' } },
+      t('app.updateAvailable'),
+    );
+    toast.append(button(t('app.update'), () => applyUpdate(), 'btn small primary'));
+    ui.append(toast);
+  };
+
+  const check = async (): Promise<void> => {
+    if (available) {
+      offer();
+      return;
+    }
+    try {
+      const response = await fetch('/version.json', { cache: 'no-store' });
+      const online = (await response.json()) as { build?: string };
+      if (online.build && online.build !== __LSG_BUILD__) {
+        refreshWorker();
+        offer();
+      }
+    } catch {
+      // Offline or server busy: the next check tries again.
+    }
+  };
+
+  if ('serviceWorker' in navigator) {
+    void caches.delete('lsg-media-v1').catch(() => undefined);
+    void import('virtual:pwa-register').then(({ registerSW }) => {
+      const update = registerSW({
+        onRegisteredSW(_url, registration) {
+          refreshWorker = () => void registration?.update().catch(() => undefined);
+        },
+        onNeedRefresh() {
+          applyUpdate = () => {
+            void update(true);
+            // Without a waiting worker nothing would reload the page.
+            window.setTimeout(() => location.reload(), 1500);
+          };
+          offer();
+        },
+        onOfflineReady() {
+          showToast(ui, t('app.offlineReady'), 'ok');
+        },
+      });
     });
-  });
-  window.addEventListener('beforeinstallprompt', (event) => {
-    event.preventDefault();
-    installPrompt = event as BeforeInstallPromptEvent;
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      installPrompt = event as BeforeInstallPromptEvent;
+    });
+  }
+
+  void check();
+  window.setInterval(() => void check(), VERSION_POLL_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') void check();
   });
 }
 
 async function loadCredits(): Promise<string> {
   let text = t('legal.creditsText');
   try {
-    const response = await fetch('/media/credits.json');
+    const response = await fetch(mediaUrl('credits.json'));
     const entries = (await response.json()) as CreditEntry[];
     text += `\n\n${t('legal.assetsHeading')}\n`;
     text += entries
@@ -177,6 +231,7 @@ function wireAccount(game: Game, account: AccountService, ui: HTMLElement): void
         h('a', { attrs: { href: '#imprint' }, text: t('legal.imprint') }),
         h('a', { attrs: { href: '#credits' }, text: t('legal.credits') }),
       ),
+      h('p', { class: 'menu-note', text: `LSG ${__LSG_VERSION__} (${__LSG_BUILD__})` }),
     );
   };
   account.subscribe(() => {

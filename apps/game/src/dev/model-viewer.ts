@@ -1,3 +1,4 @@
+import { mediaUrl } from '../media.ts';
 import {
   ACESFilmicToneMapping,
   Color,
@@ -41,7 +42,7 @@ export async function startModelViewer(canvas: HTMLCanvasElement): Promise<void>
   renderer.shadowMap.enabled = true;
   const scene = new Scene();
   scene.background = new Color(0x1b2233);
-  const hdr = await new HDRLoader().loadAsync('/media/hdri/studio_small_08_1k.hdr');
+  const hdr = await new HDRLoader().loadAsync(mediaUrl('hdri/studio_small_08_1k.hdr'));
   hdr.mapping = EquirectangularReflectionMapping;
   scene.environment = new PMREMGenerator(renderer).fromEquirectangular(hdr).texture;
   scene.environmentIntensity = 0.8;
