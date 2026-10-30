@@ -151,6 +151,47 @@ body {
   text-shadow: 0 2px 6px rgb(0 0 0 / 70%);
 }
 
+.hud-combo {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 108px);
+  right: calc(env(safe-area-inset-right) + 14px);
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgb(255 140 40 / 85%), rgb(255 70 90 / 85%));
+  font-size: 18px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 4px rgb(0 0 0 / 50%);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
+  opacity: 0;
+  transform: translateX(12px);
+  transition:
+    opacity 0.25s ease-out,
+    transform 0.25s ease-out;
+  pointer-events: none;
+}
+
+.hud-combo.active {
+  opacity: 1;
+  transform: none;
+}
+
+.hud-combo.milestone {
+  animation: combo-pop 0.45s ease-out;
+}
+
+@keyframes combo-pop {
+  35% {
+    scale: 1.35;
+    filter: brightness(1.4);
+  }
+}
+
+.hud-combo[hidden] {
+  display: none;
+}
+
 .hud-boss[hidden] {
   display: none;
 }

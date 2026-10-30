@@ -75,7 +75,18 @@ export class Simulation {
   readonly enemies: Enemy[] = [];
   readonly projectiles: Projectile[] = [];
   readonly obstacles: Obstacle[] = [];
-  readonly stats: RunStats = { kills: 0, coins: 0, peakUnits: 0, unitsLost: 0, gatesPassed: 0, elapsed: 0 };
+  readonly stats: RunStats = {
+    kills: 0,
+    coins: 0,
+    peakUnits: 0,
+    unitsLost: 0,
+    gatesPassed: 0,
+    elapsed: 0,
+    bestCombo: 0,
+  };
+  /** Current kill chain; resets when no enemy dies for BALANCE.comboWindow seconds. */
+  combo = 0;
+  private comboTimer = 0;
 
   private readonly pendingEvents: SimEvent[] = [];
   private readonly segments: Segment[];
@@ -138,6 +149,10 @@ export class Simulation {
   step(dt: number, input: StepInput): void {
     const running = this.status === 'running';
     if (running) this.stats.elapsed += dt;
+    if (this.combo > 0) {
+      this.comboTimer -= dt;
+      if (this.comboTimer <= 0) this.combo = 0;
+    }
     this.updateSquadMovement(dt, input);
 
     const scrollDelta = this.scrolling ? this.level.scrollSpeed * dt : 0;
@@ -662,6 +677,11 @@ export class Simulation {
     if (!byContact) {
       this.stats.kills++;
       this.stats.coins += coins;
+      if (this.status === 'running') {
+        this.combo++;
+        this.comboTimer = BALANCE.comboWindow;
+        this.stats.bestCombo = Math.max(this.stats.bestCombo, this.combo);
+      }
     }
     this.emit({
       type: 'enemyKilled',

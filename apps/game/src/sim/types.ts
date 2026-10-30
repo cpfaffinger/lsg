@@ -155,4 +155,6 @@ export interface RunStats {
   unitsLost: number;
   gatesPassed: number;
   elapsed: number;
+  /** Longest chain of kills with less than BALANCE.comboWindow seconds between them. */
+  bestCombo: number;
 }

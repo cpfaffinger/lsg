@@ -2,7 +2,15 @@ import { createEmptySave } from '@lsg/shared';
 import { describe, expect, it } from 'vitest';
 import { modifiersFor, rewardFor, starsFor, upgradeCost } from './economy.ts';
 
-const stats = { kills: 100, coins: 120, peakUnits: 50, unitsLost: 10, gatesPassed: 6, elapsed: 80 };
+const stats = {
+  kills: 100,
+  coins: 120,
+  peakUnits: 50,
+  unitsLost: 10,
+  gatesPassed: 6,
+  elapsed: 80,
+  bestCombo: 30,
+};
 
 describe('economy', () => {
   it('prices upgrades on a growing curve and stops at the max level', () => {

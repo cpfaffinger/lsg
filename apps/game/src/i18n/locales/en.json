@@ -83,7 +83,8 @@
     "endless": "Endless",
     "distance": "{distance} m",
     "pause": "Pause",
-    "boss": "Boss"
+    "boss": "Boss",
+    "combo": "{n}× combo"
   },
   "pause": {
     "title": "Paused",
@@ -101,6 +102,7 @@
     "newBest": "New best!",
     "kills": "Enemies defeated",
     "peakSquad": "Largest squad",
+    "bestCombo": "Best combo",
     "finalSquad": "Squad at the end",
     "coins": "Coins earned",
     "coinsKills": "Defeated enemies",

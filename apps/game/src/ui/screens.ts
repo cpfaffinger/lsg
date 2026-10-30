@@ -437,6 +437,7 @@ export class Screens {
     const rows: [string, string][] = [
       [t('result.kills'), formatNumber(stats.kills)],
       [t('result.peakSquad'), formatNumber(stats.peakUnits)],
+      [t('result.bestCombo'), formatNumber(stats.bestCombo)],
     ];
     if (won) rows.push([t('result.finalSquad'), formatNumber(finalUnits)]);
     const statList = h('dl', { class: 'result-stats' });
@@ -502,6 +503,7 @@ export class Screens {
     const rows: [string, string][] = [
       [t('result.kills'), formatNumber(stats.kills)],
       [t('result.peakSquad'), formatNumber(stats.peakUnits)],
+      [t('result.bestCombo'), formatNumber(stats.bestCombo)],
       [t('result.coins'), formatNumber(coins)],
     ];
     for (const [label, value] of rows) list.append(h('dt', { text: label }), h('dd', { text: value }));

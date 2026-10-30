@@ -15,6 +15,8 @@ export class Hud {
   private readonly bossBar: HTMLDivElement;
   private readonly bossFill: HTMLDivElement;
   private readonly bossName: HTMLSpanElement;
+  private readonly comboBox: HTMLDivElement;
+  private lastCombo = 0;
   private readonly labels: HTMLDivElement[] = [];
   private readonly projected = { x: 0, y: 0, visible: false };
   private lastUnits = -1;
@@ -48,6 +50,8 @@ export class Hud {
     this.bossBar.append(this.bossName, bossTrack);
     this.bossBar.hidden = true;
 
+    this.comboBox = el('div', 'hud-combo');
+    this.comboBox.hidden = true;
     this.squadBadge = el('div', 'squad-badge');
     for (let i = 0; i < LABEL_POOL; i++) {
       const label = el('div', 'enemy-hp');
@@ -55,7 +59,7 @@ export class Hud {
       this.labels.push(label);
       this.root.appendChild(label);
     }
-    this.root.append(top, this.bossBar, this.squadBadge);
+    this.root.append(top, this.bossBar, this.comboBox, this.squadBadge);
     parent.appendChild(this.root);
     this.refreshTexts();
   }
@@ -82,6 +86,25 @@ export class Hud {
     element.hidden = hidden;
   }
 
+  /** Kill chain counter; pops on every milestone and fades out when the chain breaks. */
+  private updateCombo(combo: number): void {
+    if (combo === this.lastCombo) return;
+    const previous = this.lastCombo;
+    this.lastCombo = combo;
+    if (combo < COMBO_MIN) {
+      this.comboBox.classList.remove('active');
+      return;
+    }
+    this.comboBox.hidden = false;
+    this.comboBox.classList.add('active');
+    this.comboBox.textContent = t('hud.combo', { n: formatNumber(combo) });
+    if (Math.floor(combo / COMBO_MILESTONE) > Math.floor(previous / COMBO_MILESTONE)) {
+      this.comboBox.classList.remove('milestone');
+      void this.comboBox.offsetWidth;
+      this.comboBox.classList.add('milestone');
+    }
+  }
+
   update(sim: Simulation, renderer: SceneRenderer, squadX: number, endless = false): void {
     this.setText(
       LABEL_POOL,
@@ -99,6 +122,8 @@ export class Hud {
       this.lastCoins = sim.stats.coins;
       this.coins.textContent = formatNumber(sim.stats.coins);
     }
+
+    this.updateCombo(sim.combo);
 
     renderer.project(squadX, 2.1, SQUAD_Z, this.projected);
     this.squadBadge.style.transform = `translate3d(${this.projected.x.toFixed(1)}px, ${this.projected.y.toFixed(1)}px, 0) translate(-50%, -100%)`;
@@ -135,6 +160,9 @@ export class Hud {
     if (boss) this.bossFill.style.transform = `scaleX(${Math.max(0, boss.hp / boss.maxHp).toFixed(4)})`;
   }
 }
+
+const COMBO_MIN = 5;
+const COMBO_MILESTONE = 25;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag);

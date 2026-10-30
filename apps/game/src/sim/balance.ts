@@ -18,6 +18,8 @@ export const BALANCE = {
     followSharpness: 18,
   },
   scrollSpeed: 9,
+  /** Seconds between two kills that still continue a combo. */
+  comboWindow: 1.2,
   gates: {
     /** Hits for the next +1 on a unit gate: base + perValue * current value. */
     unitsBaseHits: 5,

@@ -83,7 +83,8 @@
     "endless": "Endlos",
     "distance": "{distance} m",
     "pause": "Pause",
-    "boss": "Boss"
+    "boss": "Boss",
+    "combo": "{n}× Combo"
   },
   "pause": {
     "title": "Pause",
@@ -101,6 +102,7 @@
     "newBest": "Neuer Rekord!",
     "kills": "Besiegte Gegner",
     "peakSquad": "Größte Truppe",
+    "bestCombo": "Beste Combo",
     "finalSquad": "Truppe am Ende",
     "coins": "Verdiente Münzen",
     "coinsKills": "Besiegte Gegner",
