@@ -21,6 +21,9 @@ export class CameraRig {
   /** Extra zoom-out factor, e.g. when the squad grows large. Smoothed towards `targetZoom`. */
   zoom = 1;
   targetZoom = 1;
+  /** Shifts the whole rig towards the camera so deep squads stay in view. Smoothed. */
+  anchorZ = 0;
+  targetAnchorZ = 0;
   /** Horizontal follow of the squad (fraction of its x position). */
   followX = 0;
   private shakeStrength = 0;
@@ -50,6 +53,7 @@ export class CameraRig {
 
   update(dt: number, enableShake: boolean): void {
     this.zoom += (this.targetZoom - this.zoom) * Math.min(1, dt * 2);
+    this.anchorZ += (this.targetAnchorZ - this.anchorZ) * Math.min(1, dt * 2);
     this.shakeTime += dt;
     this.shakeStrength = Math.max(0, this.shakeStrength - dt * 2.5);
     const s = enableShake ? this.shakeStrength * this.shakeStrength * 0.6 : 0;
@@ -61,8 +65,10 @@ export class CameraRig {
     const scale = this.aspectScale * this.zoom;
     this.position.copy(BASE_OFFSET).multiplyScalar(scale).add(this.shakeOffset);
     this.position.x += this.followX;
+    this.position.z += this.anchorZ;
     this.lookAt.copy(BASE_LOOK_AT).multiplyScalar(scale);
     this.lookAt.x += this.followX + this.shakeOffset.x * 0.5;
+    this.lookAt.z += this.anchorZ;
     this.camera.position.copy(this.position);
     this.camera.lookAt(this.lookAt);
   }

@@ -3,7 +3,44 @@
     "title": "LSG",
     "tagline": "Lane Shooting Game",
     "loading": "Loading…",
-    "tapToStart": "Drag to move · Tap to start"
+    "controlsHint": "Drag or use A / D to steer · your squad shoots automatically"
+  },
+  "menu": {
+    "playLevel": "Play level {n}"
+  },
+  "hud": {
+    "level": "Level {n}",
+    "pause": "Pause",
+    "boss": "Boss"
+  },
+  "pause": {
+    "title": "Paused",
+    "resume": "Resume",
+    "quit": "Quit to menu"
+  },
+  "result": {
+    "wonTitle": "Level complete!",
+    "wonSubtitle": "Your squad made it through.",
+    "lostTitle": "Squad lost",
+    "lostSubtitle": "Shoot the gates to make them stronger before you pass.",
+    "kills": "Enemies defeated",
+    "peakSquad": "Largest squad",
+    "coins": "Coins earned",
+    "retry": "Try again",
+    "playAgain": "Play again",
+    "next": "Next level",
+    "menu": "Menu"
+  },
+  "gate": {
+    "damage": "DAMAGE",
+    "fireRate": "FIRE RATE",
+    "weapon": "WEAPON"
+  },
+  "weapon": {
+    "rifle": "RIFLE",
+    "spread": "SPREAD",
+    "laser": "LASER",
+    "rocket": "ROCKETS"
   },
   "debug": {
     "fps": "{fps} FPS",

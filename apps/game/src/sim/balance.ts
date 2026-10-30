@@ -19,9 +19,14 @@ export const BALANCE = {
   },
   scrollSpeed: 9,
   gates: {
-    unitsStepCost: 45,
-    factorStepCost: 420,
-    percentStepCost: 160,
+    /** Hits for the next +1 on a unit gate: base + perValue * current value. */
+    unitsBaseHits: 5,
+    unitsHitsPerValue: 1.6,
+    /** Hits for the next multiplier step: base + perStep * steps above x1. */
+    factorBaseHits: 110,
+    factorHitsPerStep: 160,
+    percentBaseHits: 22,
+    percentHitsPerValue: 2.2,
     percentStep: 5,
     maxUnitsValue: 99,
     maxPercentValue: 100,

@@ -7,7 +7,7 @@ import {
   squadHalfWidth,
   type SlotOffset,
 } from './formation.ts';
-import { addGateDamage, applyGate, gateMaxValue, gateStepCost, type GateSpec } from './gates.ts';
+import { addGateHits, applyGate, gateMaxValue, type GateSpec } from './gates.ts';
 import type { LevelDef, Segment, WaveGroup } from './level.ts';
 import { Rng } from './rng.ts';
 import { SpatialGrid } from './spatial-grid.ts';
@@ -38,6 +38,10 @@ export interface StepInput {
 const MAX_PROJECTILES = 1400;
 const ENEMY_PROJECTILE_SPEED = 17;
 const SQUAD_FRONT_Z = SQUAD_Z - 0.45;
+/** Enemies closer than this are auto-targeted; farther away the squad shoots straight. */
+const AIM_RANGE = 34;
+const AIM_CONE = 0.55;
+const AIM_CANDIDATES = 16;
 const BARREL_EXPLOSION_RADIUS = 3.6;
 const BARREL_EXPLOSION_DAMAGE = 450;
 
@@ -124,9 +128,13 @@ export class Simulation {
     );
   }
 
+  /**
+   * Advances the run. After the run has ended the world keeps moving (so the final moment
+   * can play out in slow motion), but stats and the result no longer change.
+   */
   step(dt: number, input: StepInput): void {
-    if (this.status !== 'running') return;
-    this.stats.elapsed += dt;
+    const running = this.status === 'running';
+    if (running) this.stats.elapsed += dt;
     this.updateSquadMovement(dt, input);
 
     const scrollDelta = this.scrolling ? this.level.scrollSpeed * dt : 0;
@@ -139,7 +147,7 @@ export class Simulation {
     this.fire(dt);
     this.updateProjectiles(dt);
     this.compact();
-    this.checkEnd();
+    if (running) this.checkEnd();
   }
 
   // ---------------------------------------------------------------- squad
@@ -174,6 +182,7 @@ export class Simulation {
     // Units beyond the shooter cap still contribute damage through the scale factor.
     const damageScale = this.units / shooters;
     this.shotAccumulator += shooters * this.fireRate * dt;
+    if (this.shotAccumulator >= 1) this.collectAimCandidates();
     const cols = formationColumns(this.units);
     const frontSlots = Math.min(shooters, cols * Math.min(3, formationRows(this.units)));
     while (this.shotAccumulator >= 1) {
@@ -185,11 +194,13 @@ export class Simulation {
       const ox = this.squadX + this.slot.x;
       const oz = SQUAD_Z + this.slot.z - 0.6;
       const damage = this.damagePerShot * damageScale;
+      const aim = this.pickAimAngle(ox, oz, damage * weapon.spreadCount, weapon.speed);
       for (let i = 0; i < weapon.spreadCount; i++) {
-        const angle =
+        const spread =
           weapon.spreadCount === 1
             ? 0
             : -weapon.spreadAngle + (2 * weapon.spreadAngle * i) / (weapon.spreadCount - 1);
+        const angle = aim + spread;
         this.projectiles.push({
           id: this.nextId++,
           owner: 'squad',
@@ -210,6 +221,52 @@ export class Simulation {
       }
       this.emit({ type: 'shot', x: ox, z: oz, weapon: this.weapon });
     }
+  }
+
+  /** Enemies close enough to be auto-targeted this step, nearest first. */
+  private readonly aimCandidates: Enemy[] = [];
+  /** Damage already sent towards each candidate this step, to avoid overkill. */
+  private readonly aimAssigned = new Map<number, number>();
+
+  private collectAimCandidates(): void {
+    this.aimCandidates.length = 0;
+    this.aimAssigned.clear();
+    for (const enemy of this.enemies) {
+      if (enemy.alive && enemy.z > SQUAD_Z - AIM_RANGE && enemy.z < SQUAD_Z) this.aimCandidates.push(enemy);
+    }
+    this.aimCandidates.sort((a, b) => b.z - a.z);
+    if (this.aimCandidates.length > AIM_CANDIDATES) this.aimCandidates.length = AIM_CANDIDATES;
+  }
+
+  /**
+   * Units auto-aim at close threats inside a forward cone, spreading fire across targets.
+   * Without a close threat they shoot straight ahead, which is what hits the gates.
+   */
+  private pickAimAngle(ox: number, oz: number, damage: number, speed: number): number {
+    let best: Enemy | null = null;
+    let bestScore = Number.POSITIVE_INFINITY;
+    for (const enemy of this.aimCandidates) {
+      if (!enemy.alive) continue;
+      const assigned = this.aimAssigned.get(enemy.id) ?? 0;
+      if (assigned >= enemy.hp) continue;
+      const dz = oz - enemy.z;
+      if (dz <= 0) continue;
+      const angle = Math.atan2(enemy.x - ox, dz);
+      if (Math.abs(angle) > AIM_CONE) continue;
+      // Prefer targets that need little turning and are close.
+      const score = Math.abs(angle) * 6 + dz * 0.08;
+      if (score < bestScore) {
+        bestScore = score;
+        best = enemy;
+      }
+    }
+    if (!best) return 0;
+    this.aimAssigned.set(best.id, (this.aimAssigned.get(best.id) ?? 0) + damage);
+    // Lead the target slightly: it walks towards the squad while the bullet flies.
+    const dz = oz - best.z;
+    const travel = dz / speed;
+    const leadZ = best.z + (this.level.scrollSpeed + best.speed) * travel * 0.5;
+    return Math.atan2(best.x - ox, Math.max(0.5, oz - leadZ));
   }
 
   // ---------------------------------------------------------------- spawning
@@ -254,7 +311,6 @@ export class Simulation {
         prevZ: z,
         width: Math.min(BALANCE.gates.width, slotWidth - 0.5),
         progress: 0,
-        stepCost: gateStepCost(spec.op),
         maxValue: gateMaxValue(spec.op),
         hitTimer: 10,
         alive: true,
@@ -681,7 +737,7 @@ export class Simulation {
         p.alive = false;
         gate.hitTimer = 0;
         this.emit({ type: 'gateHit', id: gate.id, x: p.x, z: gate.z });
-        if (addGateDamage(gate, p.damage) > 0)
+        if (addGateHits(gate, p.aoe > 0 ? 3 : 1) > 0)
           this.emit({ type: 'gateStep', id: gate.id, value: gate.value, op: gate.op });
         return true;
       }

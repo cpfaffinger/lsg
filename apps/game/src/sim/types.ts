@@ -21,10 +21,8 @@ export interface Gate {
   z: number;
   prevZ: number;
   width: number;
-  /** Damage accumulated towards the next value step. */
+  /** Hits accumulated towards the next value step. */
   progress: number;
-  /** Damage needed per value step. */
-  stepCost: number;
   maxValue: number;
   /** Seconds since the last hit, for "pop" feedback in the view. */
   hitTimer: number;

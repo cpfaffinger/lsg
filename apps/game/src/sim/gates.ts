@@ -16,15 +16,20 @@ export interface GateTarget {
   weapon: WeaponId;
 }
 
-export function gateStepCost(op: GateOp): number {
+/**
+ * Number of projectile hits needed to raise a gate from `value` to the next step.
+ * Costs grow with the value, so big squads still get strong gates but cannot max them out.
+ */
+export function gateStepCost(op: GateOp, value: number): number {
+  const g = BALANCE.gates;
   switch (op) {
     case 'units':
-      return BALANCE.gates.unitsStepCost;
+      return g.unitsBaseHits + g.unitsHitsPerValue * Math.max(0, value);
     case 'factor':
-      return BALANCE.gates.factorStepCost;
+      return g.factorBaseHits + g.factorHitsPerStep * Math.max(0, value - FACTOR_NEUTRAL_INDEX);
     case 'damage':
     case 'fireRate':
-      return BALANCE.gates.percentStepCost;
+      return g.percentBaseHits + g.percentHitsPerValue * Math.max(0, value);
     case 'weapon':
       return Number.POSITIVE_INFINITY;
   }
@@ -56,16 +61,17 @@ export function isGateBeneficial(op: GateOp, value: number): boolean {
 }
 
 /**
- * Adds shot damage to a gate. Returns how many value steps were gained.
- * Gates cap at their maximum value; surplus damage is discarded.
+ * Registers projectile hits on a gate. Returns how many value steps were gained.
+ * Progress counts hits rather than damage so damage upgrades do not trivialise gates.
+ * Gates cap at their maximum value; surplus hits are discarded.
  */
-export function addGateDamage(gate: Gate, damage: number): number {
+export function addGateHits(gate: Gate, hits: number): number {
   if (gate.op === 'weapon' || gate.value >= gate.maxValue) return 0;
-  gate.progress += damage;
+  gate.progress += hits;
   let steps = 0;
   const step = valueStep(gate.op);
-  while (gate.progress >= gate.stepCost && gate.value < gate.maxValue) {
-    gate.progress -= gate.stepCost;
+  while (gate.value < gate.maxValue && gate.progress >= gateStepCost(gate.op, gate.value)) {
+    gate.progress -= gateStepCost(gate.op, gate.value);
     gate.value = Math.min(gate.maxValue, gate.value + step);
     // Skip the useless zero value for unit gates so a red gate flips straight to green.
     if (gate.op === 'units' && gate.value === 0) gate.value = 1;

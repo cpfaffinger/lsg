@@ -17,13 +17,14 @@
     "dev:admin": "npm run dev -w @lsg/admin",
     "dev:api": "npm run dev -w @lsg/api",
     "build": "npm run build -w @lsg/game && npm run build -w @lsg/admin",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p tools/tsconfig.json",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "probe": "node --disable-warning=ExperimentalWarning tools/balance/probe.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FACTOR_NEUTRAL_INDEX } from './balance.ts';
-import { addGateDamage, applyGate, gateMaxValue, gateStepCost, isGateBeneficial } from './gates.ts';
+import { addGateHits, applyGate, gateMaxValue, gateStepCost, isGateBeneficial } from './gates.ts';
 import type { Gate, GateOp } from './types.ts';
 
 function makeGate(op: GateOp, value: number): Gate {
@@ -15,7 +15,6 @@ function makeGate(op: GateOp, value: number): Gate {
     prevZ: -10,
     width: 4,
     progress: 0,
-    stepCost: gateStepCost(op),
     maxValue: gateMaxValue(op),
     hitTimer: 0,
     alive: true,
@@ -25,29 +24,35 @@ function makeGate(op: GateOp, value: number): Gate {
 const base = { units: 10, damageBonus: 0, fireRateBonus: 0, weapon: 'rifle' as const };
 
 describe('gate shooting', () => {
-  it('raises a unit gate by one per step cost', () => {
+  it('raises a unit gate step by step with growing costs', () => {
     const gate = makeGate('units', 2);
-    const steps = addGateDamage(gate, gate.stepCost * 3 + 1);
+    const hits = gateStepCost('units', 2) + gateStepCost('units', 3) + gateStepCost('units', 4);
+    const steps = addGateHits(gate, hits + 1);
     expect(steps).toBe(3);
     expect(gate.value).toBe(5);
     expect(gate.progress).toBeCloseTo(1);
+    expect(gateStepCost('units', 10)).toBeGreaterThan(gateStepCost('units', 1));
   });
 
   it('flips a red unit gate straight from -1 to +1', () => {
     const gate = makeGate('units', -1);
-    addGateDamage(gate, gate.stepCost);
+    addGateHits(gate, gateStepCost('units', -1));
     expect(gate.value).toBe(1);
   });
 
   it('caps at the maximum value', () => {
     const gate = makeGate('factor', 4);
-    addGateDamage(gate, gate.stepCost * 10);
+    addGateHits(gate, 1e6);
     expect(gate.value).toBe(gate.maxValue);
   });
 
-  it('ignores damage on weapon gates', () => {
+  it('ignores hits on weapon gates', () => {
     const gate = makeGate('weapon', 0);
-    expect(addGateDamage(gate, 1e6)).toBe(0);
+    expect(addGateHits(gate, 1e6)).toBe(0);
+  });
+
+  it('needs far more hits for a multiplier than for a few units', () => {
+    expect(gateStepCost('factor', FACTOR_NEUTRAL_INDEX)).toBeGreaterThan(gateStepCost('units', 5) * 5);
   });
 });
 
