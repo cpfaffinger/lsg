@@ -19,6 +19,9 @@ export class Hud {
   private readonly projected = { x: 0, y: 0, visible: false };
   private lastUnits = -1;
   private lastCoins = -1;
+  private lastProgress = '';
+  private readonly textCache: string[] = [];
+  private readonly hiddenCache: boolean[] = [];
   readonly pauseButton: HTMLButtonElement;
 
   constructor(parent: HTMLElement) {
@@ -66,16 +69,33 @@ export class Hud {
     this.root.hidden = !value;
   }
 
+  /** Writes to the DOM only when a value actually changed; layout work dominates HUD cost. */
+  private setText(index: number, element: HTMLElement, text: string): void {
+    if (this.textCache[index] === text) return;
+    this.textCache[index] = text;
+    element.textContent = text;
+  }
+
+  private setHidden(index: number, element: HTMLElement, hidden: boolean): void {
+    if (this.hiddenCache[index] === hidden) return;
+    this.hiddenCache[index] = hidden;
+    element.hidden = hidden;
+  }
+
   update(sim: Simulation, renderer: SceneRenderer, squadX: number): void {
-    this.levelLabel.textContent = t('hud.level', { n: sim.level.number });
-    this.progressFill.style.transform = `scaleX(${sim.progress.toFixed(4)})`;
+    this.setText(LABEL_POOL, this.levelLabel, t('hud.level', { n: sim.level.number }));
+    const progress = `scaleX(${sim.progress.toFixed(3)})`;
+    if (progress !== this.lastProgress) {
+      this.lastProgress = progress;
+      this.progressFill.style.transform = progress;
+    }
     if (sim.stats.coins !== this.lastCoins) {
       this.lastCoins = sim.stats.coins;
       this.coins.textContent = formatNumber(sim.stats.coins);
     }
 
     renderer.project(squadX, 2.1, SQUAD_Z, this.projected);
-    this.squadBadge.style.transform = `translate(${this.projected.x}px, ${this.projected.y}px) translate(-50%, -100%)`;
+    this.squadBadge.style.transform = `translate3d(${this.projected.x.toFixed(1)}px, ${this.projected.y.toFixed(1)}px, 0) translate(-50%, -100%)`;
     if (sim.units !== this.lastUnits) {
       if (this.lastUnits >= 0) {
         this.squadBadge.classList.remove('bump-up', 'bump-down');
@@ -96,16 +116,16 @@ export class Hud {
       const label = this.labels[used++];
       if (!label) continue;
       renderer.project(enemy.x, enemy.radius * 2 + 0.9, enemy.z, this.projected);
-      label.hidden = !this.projected.visible;
-      label.style.transform = `translate(${this.projected.x}px, ${this.projected.y}px) translate(-50%, -100%)`;
-      label.textContent = formatCompact(Math.ceil(enemy.hp));
+      this.setHidden(used - 1, label, !this.projected.visible);
+      label.style.transform = `translate3d(${this.projected.x.toFixed(1)}px, ${this.projected.y.toFixed(1)}px, 0) translate(-50%, -100%)`;
+      this.setText(used - 1, label, formatCompact(Math.ceil(enemy.hp)));
     }
     for (let i = used; i < this.labels.length; i++) {
       const label = this.labels[i];
-      if (label) label.hidden = true;
+      if (label) this.setHidden(i, label, true);
     }
 
-    this.bossBar.hidden = boss === null;
+    if (this.bossBar.hidden !== (boss === null)) this.bossBar.hidden = boss === null;
     if (boss) this.bossFill.style.transform = `scaleX(${Math.max(0, boss.hp / boss.maxHp).toFixed(4)})`;
   }
 }

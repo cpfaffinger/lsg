@@ -10,7 +10,8 @@ async function boot(): Promise<void> {
   const game = new Game(canvas, ui);
   game.start();
   if (import.meta.env.DEV) {
-    (window as unknown as { lsg: Game }).lsg = game;
+    const { STRESS_LEVEL } = await import('./data/levels/stress.ts');
+    Object.assign(window, { lsg: game, lsgLevels: { stress: STRESS_LEVEL } });
   }
 }
 

@@ -1,10 +1,14 @@
+import { AudioDirector } from './audio/audio-director.ts';
+import { AudioManager } from './audio/audio-manager.ts';
 import { GameLoop } from './core/game-loop.ts';
 import { InputController } from './core/input.ts';
 import { detectInitialQuality, QUALITY_PRESETS } from './core/quality.ts';
+import { SettingsStore } from './core/settings.ts';
 import { StateMachine } from './core/state-machine.ts';
 import { PROTOTYPE_LEVEL } from './data/levels/prototype.ts';
 import { onLocaleChange, t } from './i18n/i18n.ts';
 import { SceneRenderer } from './render/scene-renderer.ts';
+import { EffectsDirector } from './render/fx/effects-director.ts';
 import { WorldView } from './render/world-view.ts';
 import { squadDepth } from './sim/formation.ts';
 import type { LevelDef } from './sim/level.ts';
@@ -27,12 +31,30 @@ export class Game {
   private sim: Simulation;
   private level: LevelDef = PROTOTYPE_LEVEL;
   private resultShown = false;
+  private readonly effects: EffectsDirector;
+  /** Simulation events collected during this frame's steps, consumed by the effects. */
+  private readonly frameEvents: SimEvent[] = [];
+  private lastDistance = 0;
+  readonly settings = new SettingsStore();
+  readonly audio = new AudioManager();
+  private readonly audioDirector = new AudioDirector(this.audio);
 
   constructor(canvas: HTMLCanvasElement, ui: HTMLElement) {
     const quality = QUALITY_PRESETS[detectInitialQuality(navigator)];
     this.renderer = new SceneRenderer(canvas, quality);
     this.input = new InputController(canvas);
     this.world = new WorldView(this.renderer.scene);
+    this.effects = new EffectsDirector(this.renderer.scene, this.renderer.rig, quality);
+    this.applySettings();
+    this.settings.subscribe(() => this.applySettings());
+    // Browsers only allow audio after a user gesture.
+    const unlockAudio = () => this.audio.unlock();
+    this.input.onFirstInteraction = unlockAudio;
+    ui.addEventListener('pointerdown', unlockAudio);
+    ui.addEventListener('click', (event) => {
+      if ((event.target as HTMLElement).closest('button'))
+        this.audio.play('click', { volume: 0.4, jitter: 0 });
+    });
     this.hud = new Hud(ui);
     this.screens = new Screens(ui);
     this.debug = new DebugOverlay(ui);
@@ -53,7 +75,12 @@ export class Game {
       }
     });
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden && this.states.current === 'playing') this.pause();
+      if (document.hidden) {
+        if (this.states.current === 'playing') this.pause();
+        this.audio.suspend();
+      } else {
+        this.audio.resume();
+      }
     });
     onLocaleChange(() => {
       this.world.gates.labelRevision++;
@@ -68,11 +95,27 @@ export class Game {
     this.loop.start();
   }
 
+  /** Development helper: starts a specific level, optionally with a custom squad size. */
+  debugStartLevel(level: LevelDef, startUnits?: number): void {
+    this.level = level;
+    if (this.states.current !== 'playing') this.states.transition('playing');
+    this.sim = new Simulation(level, {
+      ...DEFAULT_MODIFIERS,
+      startUnits: startUnits ?? DEFAULT_MODIFIERS.startUnits,
+    });
+    this.effects.clear();
+    this.lastDistance = 0;
+  }
+
   /**
    * Development helper: advances the running simulation by `seconds`, steering towards
    * `targetX` (or the best upcoming gate when omitted). Used for automated visual checks.
    */
-  debugAdvance(seconds: number, targetX?: number): { units: number; status: string; distance: number } {
+  debugAdvance(
+    seconds: number,
+    targetX?: number,
+    renderFrames = false,
+  ): { units: number; status: string; distance: number } {
     if (this.states.current === 'menu') this.states.transition('playing');
     const dt = 1 / 60;
     for (let t = 0; t < seconds && this.sim.status === 'running'; t += dt) {
@@ -83,6 +126,7 @@ export class Game {
       }
       this.sim.step(dt, { dragWorld: target - this.sim.squadX, axis: 0 });
       this.handleEvents(this.sim.drainEvents());
+      if (renderFrames) this.render(1, dt);
     }
     return { units: this.sim.units, status: this.sim.status, distance: Math.round(this.sim.distance) };
   }
@@ -90,6 +134,7 @@ export class Game {
   private registerStates(): void {
     this.states.register('menu', {
       enter: () => {
+        this.audio.setMood('menu');
         this.hud.visible = false;
         this.newRun();
         this.screens.showTitle(this.level.number, () => this.states.transition('playing'));
@@ -103,6 +148,7 @@ export class Game {
           this.newRun();
           this.input.consumeDragDelta();
         }
+        this.audio.setMood(this.sim.bossId !== null ? 'boss' : 'play');
         this.loop.timeScale = 1;
       },
     });
@@ -123,9 +169,19 @@ export class Game {
     });
   }
 
+  private applySettings(): void {
+    const s = this.settings.get();
+    this.audio.setVolumes(s.masterVolume, s.sfxVolume, s.musicVolume, s.muted);
+    this.effects.reducedMotion = s.reducedMotion;
+    if (s.showFps) this.debug.visible = true;
+  }
+
   private newRun(): void {
     this.sim = new Simulation(this.level, DEFAULT_MODIFIERS);
     this.resultShown = false;
+    this.lastDistance = 0;
+    this.frameEvents.length = 0;
+    this.effects.clear();
   }
 
   private pause(): void {
@@ -162,13 +218,8 @@ export class Game {
 
   private handleEvents(events: SimEvent[]): void {
     for (const event of events) {
+      this.frameEvents.push(event);
       switch (event.type) {
-        case 'unitsLost':
-          this.renderer.rig.shake(Math.min(0.5, 0.08 + event.count * 0.02));
-          break;
-        case 'explosion':
-          this.renderer.rig.shake(0.35);
-          break;
         case 'levelComplete':
         case 'levelFailed':
           // Let the final moment play out briefly before the result screen.
@@ -190,6 +241,13 @@ export class Game {
     this.world.update(this.sim, alpha, frameDt);
     this.renderer.setScroll(this.sim.distance);
     const squadX = this.world.squad.centerX;
+    const scrollDz = this.sim.distance - this.lastDistance;
+    this.lastDistance = this.sim.distance;
+    this.effects.handle(this.frameEvents, squadX);
+    this.audioDirector.handle(this.frameEvents);
+    this.frameEvents.length = 0;
+    this.audio.setIntensity(this.sim.units / 150);
+    this.effects.update(frameDt * this.loop.timeScale, Math.max(0, scrollDz));
     this.renderer.rig.followX = squadX * 0.25;
     // Follow the squad's depth and zoom out slightly so even huge squads stay fully in view.
     const depth = squadDepth(this.sim.units);

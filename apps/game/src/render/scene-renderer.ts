@@ -8,7 +8,7 @@ import {
   HemisphereLight,
   Mesh,
   MeshStandardMaterial,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   PlaneGeometry,
   RepeatWrapping,
   Scene,
@@ -48,7 +48,7 @@ export class SceneRenderer {
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
-    this.renderer.shadowMap.type = PCFSoftShadowMap;
+    this.renderer.shadowMap.type = PCFShadowMap;
 
     const sky = new Color(0x0b1020);
     this.scene.background = sky;
