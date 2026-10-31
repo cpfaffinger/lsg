@@ -57,6 +57,10 @@ Abweichungen vom ursprünglichen Plan, mit Begründung. Wo dieser Abschnitt und 
 | 2026-10-30 | M8 | Playtest mit Personen, echte Gerätetests, Lighthouse und Offline-Test im echten Browser **nicht autonom durchführbar** | Siehe Abschnitt 7 „Offene Punkte nach 1.0“ |
 | 2026-10-30 | Polish | **Horden bleiben breit** statt zu einer Reihe zusammenzulaufen; **erwartete Stärke** im Tuner an die echten Upgrades angepasst (1 + 0,08 je Level statt 0,045) | Die Zielsuche zog alle Läufer auf eine Linie, und gekaufte Upgrades lagen doppelt so hoch wie angenommen |
 | 2026-10-30 | Polish | **Dünen** neben der Wüstenstrecke; Soldaten-Fernmodell mit grober Vereinfachung (1.820 statt 2.590 Dreiecke); Gegner-Massen nutzen ab 50 Figuren früher das Fernmodell, kleine Gegner werfen auf „niedrig“ und „mittel“ keine Schatten mehr | Mit den neuen Horden lagen im Extremfall fast zwei Millionen Dreiecke pro Bild an; das ist für Handys zu viel |
+| 2026-10-31 | Spätspiel | **Gegner wachsen mit dem echten Trupp** (Lebenspunkte und Verluste mal (Trupp / Plan)^0,75); Boss-Treffer kosten einen Anteil des Trupps statt einer festen Zahl; Horden bis 300 Läufer; Läufer-Zeichenkapazität 1.000 | Ab Level 8 hatte der Trupp über 1.000 Soldaten, Gegner erreichten ihn nicht mehr, Bosse fielen in 6 bis 13 Sekunden. Feste Boss-Treffer führten zu einem Absturz statt zu einem längeren Kampf |
+| 2026-10-31 | Spätspiel | **Neue Mechaniken nach Level 12:** Bomben-Läufer (14), Formationen mit Schildwall und Zangenangriff (16), Hinterhalte (18), Fallen-Tore (19), Feuerwände und Bomben-Beschwörung der Drachen (20, 30). Bomben-Läufer sind ein prozedurales Modell, kein neues Asset | 18 Level lang kam nichts Neues mehr |
+| 2026-10-31 | Spätspiel | **Tuner neu:** rechnet mit den echten Upgrades (Schaden und Feuerrate), jeder Abschnitt würfelt getrennt, ein Durchschnittsspieler darf ab Level 13 einen von vier Versuchen verlieren, ein Spieler mit zufälligen Toren muss jedes Level in vier Versuchen schaffen können | Die Schwierigkeit sprang von Level zu Level, und es gab keine Niederlagen |
+| 2026-10-31 | Spätspiel | **Endlosmodus:** Mechaniken kommen schrittweise, der Druck wächst ohne Grenze, der Lauf kann nicht mehr gewonnen werden | Neue Spieler starben nach 300 m, ausgebaute Trupps erreichten 9.999 Soldaten und das Ende |
 
 ## 0. Getroffene Entscheidungen (2026-10-30)
 
@@ -360,7 +364,7 @@ Diese Punkte habe ich festgelegt; sie lassen sich jederzeit ändern:
 
 ## 7. Stand 1.0 und offene Punkte
 
-Alle Meilensteine M0 bis M8 sind umgesetzt und im lokalen Git-Repository (`master`, Tag `v1.0.0`) committet. `npm run check` (Lint, Typprüfung, Tests, Build) ist grün; die Bots gewinnen mit erwarteter Ausrüstung: gut 30/30, durchschnittlich 30/30, schwach (Tore zufällig) 10/30; mit Shop-Upgrades schaffen alle drei die ganze Kampagne.
+Alle Meilensteine M0 bis M8 sind umgesetzt und im lokalen Git-Repository (`master`, Tag `v1.0.0`) committet. `npm run check` (Lint, Typprüfung, Tests, Build) ist grün; die Bots gewinnen mit erwarteter Ausrüstung: gut 30/30, durchschnittlich 30/30, schwach (Tore zufällig) 16/30; mit Shop-Upgrades schaffen alle drei die ganze Kampagne (30, 31 und 50 Versuche).
 
 Diese Punkte brauchen Menschen oder echte Geräte und sind daher offen:
 - **Playtest** mit mehreren Personen, besonders Schwierigkeit ab Welt 2 und die Boss-Level 20 und 30.

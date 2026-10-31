@@ -185,6 +185,11 @@
     "shield": "Schildträger blocken gerade Schüsse. Triff sie von der Seite oder nutze Streuwaffe und Raketen.",
     "laser": "Laser: durchschlägt mehrere Gegner.",
     "rocket": "Raketen: langsam, aber explosiv.",
+    "bomber": "Bomben-Läufer! Sie reißen einen Teil deines Trupps mit. Schieß sie früh ab, dann treffen sie ihre eigenen Leute.",
+    "formations": "Formationen: Schildwälle sperren die ganze Spur, Horden greifen von beiden Seiten an.",
+    "ambush": "Hinterhalt: Manche Wellen kommen direkt hintereinander, ohne Tor dazwischen.",
+    "trap": "Fallen-Tore: Beide Seiten kosten Soldaten. Schieß auf das kleinere Übel, um es zu entschärfen.",
+    "breath": "Der Drache speit jetzt Feuerwände. Steuere deinen Trupp in die Lücke!",
     "continue": "Los geht's!"
   },
   "debug": {

@@ -55,6 +55,69 @@ describe('enemy mechanics', () => {
     expect(shotsPerSoldier(3)).toBeGreaterThan(shotsPerSoldier(12) * 1.3);
   });
 
+  it('a squad above the plan meets tougher enemies that cost it more', () => {
+    const wave: Segment = {
+      type: 'wave',
+      at: 40,
+      groups: [{ kind: 'tank', count: 1, expectedUnits: 10 }],
+    };
+    const planned = new Simulation(level([wave]), units(10));
+    const outgrown = new Simulation(level([wave]), units(160));
+    run(planned, 0.2);
+    run(outgrown, 0.2);
+    const tankOf = (sim: Simulation) => sim.enemies.find((e) => e.kind === 'tank');
+    expect(tankOf(planned)?.threat).toBe(1);
+    expect(tankOf(outgrown)?.threat).toBeCloseTo(8, 5);
+    expect(tankOf(outgrown)?.maxHp).toBe((tankOf(planned)?.maxHp ?? 0) * 8);
+  });
+
+  it('a bomber at the squad takes a share of it', () => {
+    const sim = new Simulation(
+      level([{ type: 'wave', at: 30, groups: [{ kind: 'bomber', count: 1, hpScale: 100000 }] }]),
+      units(100),
+    );
+    const events = run(sim, 8);
+    expect(events.filter((e) => e.type === 'explosion')).toHaveLength(1);
+    const lost = events.find((e) => e.type === 'unitsLost');
+    expect(lost).toMatchObject({ cause: 'bomber', count: 5 });
+  });
+
+  it('a bomber shot early hurts its own side and not the squad', () => {
+    const sim = new Simulation(
+      level([
+        {
+          type: 'wave',
+          at: 50,
+          groups: [
+            { kind: 'bomber', count: 1 },
+            { kind: 'tank', count: 1, hpScale: 100 },
+          ],
+        },
+      ]),
+      units(40),
+    );
+    const events = run(sim, 4);
+    expect(events.some((e) => e.type === 'explosion')).toBe(true);
+    expect(events.some((e) => e.type === 'unitsLost' && e.cause === 'bomber')).toBe(false);
+  });
+
+  it('a wall of dragon fire leaves a gap the squad can steer into', () => {
+    const sim = new Simulation(
+      level([{ type: 'boss', at: 30, kind: 'boss', hpScale: 1000, fierce: true }]),
+      units(10),
+    );
+    let flames: number[] = [];
+    for (let t = 0; t < 30 && flames.length === 0; t += SIM_DT) {
+      sim.step(SIM_DT, { dragWorld: 0, axis: 0 });
+      sim.drainEvents();
+      flames = sim.projectiles.filter((p) => p.owner === 'enemy' && p.vx === 0).map((p) => p.x);
+    }
+    expect(flames.length).toBeGreaterThan(4);
+    const edges = [-5, ...flames.sort((a, b) => a - b), 5];
+    const widest = Math.max(...edges.slice(1).map((x, i) => x - (edges[i] ?? x)));
+    expect(widest).toBeGreaterThan(4.5);
+  });
+
   it('splitters break into runners when shot', () => {
     const sim = new Simulation(
       level([{ type: 'wave', at: 50, groups: [{ kind: 'splitter', count: 1 }] }]),

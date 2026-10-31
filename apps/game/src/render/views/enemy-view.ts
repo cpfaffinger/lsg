@@ -1,4 +1,5 @@
 import {
+  type BufferGeometry,
   DynamicDrawUsage,
   InstancedBufferAttribute,
   InstancedMesh,
@@ -10,16 +11,17 @@ import {
 import type { Simulation } from '../../sim/simulation.ts';
 import type { EnemyKind, SimEvent } from '../../sim/types.ts';
 import { createAnimatedMaterials, STILL } from '../models/animated-material.ts';
-import { buildShieldPlate, ENEMY_MODELS } from '../models/enemies.ts';
+import { BOMBER_WALK, buildBomber, buildShieldPlate, ENEMY_MODELS } from '../models/enemies.ts';
 import type { Detail } from '../models/shapes.ts';
 import { createSkinnedMaterials, instanceGeometry } from '../models/skinned-character.ts';
 
 const CAPACITY: Record<EnemyKind, number> = {
-  runner: 600,
+  runner: 1000,
   tank: 40,
   shooter: 80,
   splitter: 80,
   shield: 80,
+  bomber: 60,
   miniboss: 4,
   boss: 2,
 };
@@ -31,6 +33,7 @@ const DEATHS: Record<EnemyKind, { seconds: number; knock: number; hop: number; t
   runner: { seconds: 0.34, knock: 2.6, hop: 0.55, tilt: 1.5 },
   shooter: { seconds: 0.34, knock: 2.2, hop: 0.5, tilt: 1.5 },
   shield: { seconds: 0.4, knock: 1.8, hop: 0.4, tilt: 1.4 },
+  bomber: { seconds: 0.1, knock: 0, hop: 0, tilt: 0 },
   splitter: { seconds: 0.26, knock: 1.2, hop: 0.7, tilt: 0.6 },
   tank: { seconds: 0.55, knock: 1.2, hop: 0.2, tilt: 1.45 },
   miniboss: { seconds: 0.9, knock: 1.4, hop: 0.2, tilt: 1.45 },
@@ -38,6 +41,8 @@ const DEATHS: Record<EnemyKind, { seconds: number; knock: number; hop: number; t
 };
 /** Falling figures at once; a big volley kills more than anyone can follow. */
 const MAX_FALLING = 140;
+/** Gait speed of the walking bombs. */
+const BOMBER_GAIT = 16;
 
 interface FallingEnemy {
   kind: EnemyKind;
@@ -86,14 +91,21 @@ export class EnemyView {
 
   constructor(scene: Scene) {
     const plateMaterials = createAnimatedMaterials(STILL);
+    const bomberMaterials = createAnimatedMaterials(BOMBER_WALK);
     for (const kind of Object.keys(CAPACITY) as EnemyKind[]) {
       const model = ENEMY_MODELS[kind];
-      const materials = createSkinnedMaterials(model.id);
+      const materials = model.id ? createSkinnedMaterials(model.id) : bomberMaterials;
       const make = (detail: Detail) => {
         const capacity = CAPACITY[kind];
         const params = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
         params.setUsage(DynamicDrawUsage);
-        const geometry = instanceGeometry(model.id, detail, params);
+        let geometry: BufferGeometry;
+        if (model.id) {
+          geometry = instanceGeometry(model.id, detail, params);
+        } else {
+          geometry = buildBomber(detail);
+          geometry.setAttribute('iParams', params);
+        }
         const mesh = new InstancedMesh(geometry, materials.material, capacity);
         mesh.customDepthMaterial = materials.depth;
         mesh.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -226,9 +238,11 @@ export class EnemyView {
       params[index * 4] = enemy.seed;
       // Clip 0 is the way in, clip 1 the attack once the enemy has reached its firing position.
       const holding = enemy.holdZ !== null && enemy.z >= enemy.holdZ - 0.1;
-      params[index * 4 + 1] = holding ? 1 : 0;
+      params[index * 4 + 1] = enemy.kind === 'bomber' ? BOMBER_GAIT : holding ? 1 : 0;
       // Big enemies are hit almost every frame; a strong flash would bleach them white.
       params[index * 4 + 2] = enemy.hitFlash > 0 ? (BIG_KINDS.has(enemy.kind) ? 0.08 : 0.6) : 0;
+      // Bombers blink faster the closer they get.
+      if (enemy.kind === 'bomber' && Math.sin(z * 2.2 + enemy.seed) > 0.2) params[index * 4 + 2] = 0.3;
       params[index * 4 + 3] = 0;
     }
     this.updateFalling(sim, frameDt);

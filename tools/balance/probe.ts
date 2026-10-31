@@ -3,11 +3,11 @@
  *
  *   node tools/balance/probe.ts [all|campaign|<levelNumber>|prototype] [--timeline]
  */
-import { CAMPAIGN_LENGTH, campaignLevel, expectedLoadout } from '../../apps/game/src/data/levels/campaign.ts';
+import { CAMPAIGN_LENGTH, campaignLevel } from '../../apps/game/src/data/levels/campaign.ts';
 import { PROTOTYPE_LEVEL } from '../../apps/game/src/data/levels/prototype.ts';
 import type { LevelDef } from '../../apps/game/src/sim/level.ts';
 import { DEFAULT_MODIFIERS, type RunModifiers } from '../../apps/game/src/sim/types.ts';
-import { playLevel, type BotSkill } from './bot.ts';
+import { expectedModifiers, playLevel, type BotSkill } from './bot.ts';
 
 const args = process.argv.slice(2);
 const showTimeline = args.includes('--timeline');
@@ -18,11 +18,7 @@ if (filter === 'prototype' || filter === 'all')
   entries.push({ level: PROTOTYPE_LEVEL, modifiers: DEFAULT_MODIFIERS });
 for (let n = 1; n <= CAMPAIGN_LENGTH; n++) {
   if (filter !== 'all' && filter !== 'campaign' && filter !== String(n)) continue;
-  const loadout = expectedLoadout(n);
-  entries.push({
-    level: campaignLevel(n),
-    modifiers: { ...DEFAULT_MODIFIERS, startUnits: loadout.startUnits, damageMultiplier: loadout.power },
-  });
+  entries.push({ level: campaignLevel(n), modifiers: expectedModifiers(n) });
 }
 
 const wins: Record<BotSkill, number> = { good: 0, average: 0, poor: 0 };

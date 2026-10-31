@@ -37,12 +37,15 @@ for (let n = 1; n <= CAMPAIGN_LENGTH; n++) {
   let attempts = 0;
   let won = false;
   let stars = 0;
+  let last = { peak: 0, end: 0, lost: 0 };
   while (!won && attempts < MAX_ATTEMPTS) {
     attempts++;
     const modifiers = modifiersFor(save);
     const lookahead = ATTEMPT_LOOKAHEAD[attempts - 1];
     const result = playLevel(campaignLevel(n), modifiers, skill, skill === 'good' ? undefined : lookahead);
     won = result.status === 'won';
+    const lost = Object.values(result.losses).reduce((sum, count) => sum + count, 0);
+    last = { peak: result.stats.peakUnits, end: result.units, lost };
     const reward = rewardFor(save, n, won, result.units, result.stats, modifiers.coinMultiplier);
     save.coins += reward.total;
     if (won) {
@@ -54,7 +57,7 @@ for (let n = 1; n <= CAMPAIGN_LENGTH; n++) {
   totalAttempts += attempts;
   const upgrades = UPGRADE_IDS.map((id) => `${id[0]}${save.upgrades[id]}`).join(' ');
   console.info(
-    `level ${String(n).padStart(2)}: ${won ? 'won ' : 'STUCK'} after ${String(attempts).padStart(2)} attempt(s), stars ${stars}, coins ${String(save.coins).padStart(5)}, upgrades ${upgrades}`,
+    `level ${String(n).padStart(2)}: ${won ? 'won ' : 'STUCK'} after ${String(attempts).padStart(2)} attempt(s), stars ${stars}, coins ${String(save.coins).padStart(5)}, peak ${String(last.peak).padStart(4)}, end ${String(last.end).padStart(4)}, lost ${String(last.lost).padStart(4)}, upgrades ${upgrades}`,
   );
   if (!won) {
     stuckAt = n;

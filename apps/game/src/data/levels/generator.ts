@@ -14,6 +14,11 @@ export type Feature =
   | 'splitter'
   | 'barrier'
   | 'shield'
+  | 'bomber'
+  | 'formations'
+  | 'ambush'
+  | 'trap'
+  | 'breath'
   | 'spread'
   | 'laser'
   | 'rocket'
@@ -51,6 +56,15 @@ const MAX_RUNNERS = 150;
 const SPOTLIGHT_BEATS = 2;
 /** Smallest crowd of a wave never grows beyond this, however large the squad gets. */
 const MAX_HORDE_FLOOR = 60;
+const BEAT_SEED_STEP = 7919;
+/** Soldiers in a shield wall across the lane. */
+const PHALANX_SIZE = 7;
+/** Width and distance from the middle of each half of a horde attacking from both sides. */
+const PINCER_WIDTH = 3.4;
+const PINCER_OFFSET = 3;
+/** Where an ambush wave stands in a beat and how strong it is compared to the regular wave. */
+const AMBUSH_DELAY = 42;
+const AMBUSH_SHARE = 0.6;
 /** Runners keep at least this share of their base HP (half = one rifle shot). */
 const MIN_RUNNER_HP_SCALE = 0.5;
 const UNIT_DPS = BALANCE.squad.baseDamage * BALANCE.squad.baseFireRate;
@@ -139,6 +153,19 @@ function chooseGates(rng: Rng, params: GeneratorParams, plan: Plan, beat: number
       },
     });
   }
+  if (f.has('trap') && beat > 1) {
+    // Both sides cost soldiers; shooting the lesser evil is the way out.
+    options.push({
+      weight: params.spotlight === 'trap' && beat === 2 ? 50 : 1.2,
+      build: () => [
+        { op: 'units', value: bad() },
+        { op: 'units', value: Math.round(bad() * 1.8) },
+      ],
+      apply: () => {
+        plan.units *= 0.8;
+      },
+    });
+  }
   const weapons = (['spread', 'laser', 'rocket'] as WeaponId[]).filter((w) => {
     const feature = weaponFeature(w);
     return feature !== null && f.has(feature);
@@ -186,6 +213,7 @@ function buildWave(rng: Rng, params: GeneratorParams, budget: number, plan: Plan
     { kind: 'shooter', feature: 'shooter', share: 0.15, count: [2, 5] },
     { kind: 'splitter', feature: 'splitter', share: 0.25, count: [2, 6] },
     { kind: 'shield', feature: 'shield', share: 0.2, count: [2, 5] },
+    { kind: 'bomber', feature: 'bomber', share: 0.08, count: [3, 8] },
   ];
   let remaining = budget;
   for (const special of specials) {
@@ -216,6 +244,22 @@ function buildWave(rng: Rng, params: GeneratorParams, budget: number, plan: Plan
     });
     remaining -= share;
   }
+  // Formations: a shield wall across the whole lane, or the horde coming in from both sides.
+  const formation =
+    f.has('formations') &&
+    beat > 0 &&
+    (params.spotlight === 'formations' ? beat <= SPOTLIGHT_BEATS : rng.chance(0.3));
+  const pincer = formation && rng.chance(0.5);
+  if (formation && !pincer) {
+    const share = budget * 0.25;
+    groups.push({
+      kind: 'shield',
+      count: PHALANX_SIZE,
+      pattern: 'line',
+      hpScale: Number(Math.max(0.6, share / (PHALANX_SIZE * ENEMIES.shield.hp)).toFixed(2)),
+    });
+    remaining -= share;
+  }
   remaining = Math.max(budget * 0.35, remaining);
   // Waves are hordes: the HP budget buys many weak runners rather than a few tough ones.
   // Runners die to a single rifle shot at the weakest, so the crowd melts satisfyingly.
@@ -228,25 +272,40 @@ function buildWave(rng: Rng, params: GeneratorParams, budget: number, plan: Plan
   const count = clamp(Math.max(hordeFloor, affordable), hordeFloor, MAX_RUNNERS);
   const hpScale = Math.max(MIN_RUNNER_HP_SCALE, remaining / (count * runnerHp));
   const pattern = rng.pick(['grid', 'grid', 'scatter', 'wedge'] as const);
-  groups.unshift({
+  const perUnit = 1 + params.difficulty * 5;
+  const horde: WaveGroup = {
     kind: 'runner',
     count,
     pattern,
     hpScale: Number(hpScale.toFixed(2)),
-    perUnit: Number((1 + params.difficulty * 5).toFixed(2)),
-  });
-  return groups;
+    perUnit: Number(perUnit.toFixed(2)),
+  };
+  if (pincer) {
+    const half = {
+      ...horde,
+      count: Math.ceil(count / 2),
+      pattern: 'grid' as const,
+      width: PINCER_WIDTH,
+      perUnit: Number((perUnit / 2).toFixed(2)),
+    };
+    groups.unshift({ ...half, x: -PINCER_OFFSET }, { ...half, x: PINCER_OFFSET });
+  } else {
+    groups.unshift(horde);
+  }
+  return groups.map((group) => ({ ...group, expectedUnits: Math.round(plan.units) }));
 }
 
 /** Builds a complete level from generator parameters. Deterministic for a given seed. */
 export function generateLevel(params: GeneratorParams): LevelDef {
-  const rng = new Rng(params.seed);
   const plan: Plan = { units: params.startUnits, power: params.power };
   const segments: Segment[] = [];
   const lossPerWave = 0.1;
 
   for (let beat = 0; beat < params.beats; beat++) {
     const start = INTRO + beat * BEAT_LENGTH;
+    // Every beat rolls on its own, so the difficulty changes wave sizes but not the course.
+    const rng = new Rng(params.seed + beat * BEAT_SEED_STEP);
+    const waveRng = new Rng(params.seed + beat * BEAT_SEED_STEP + 1);
     segments.push({ type: 'gates', at: start, gates: chooseGates(rng, params, plan, beat) });
 
     if (params.features.has('barrier') && beat > 0 && rng.chance(0.3)) {
@@ -259,7 +318,17 @@ export function generateLevel(params: GeneratorParams): LevelDef {
     // Early waves are gentler so the squad can grow first.
     const ramp = clamp(0.55 + beat * 0.12, 0.55, 1.15);
     const budget = plan.units * plan.power * UNIT_DPS * EXPOSURE * params.difficulty * ramp;
-    segments.push({ type: 'wave', at: start + 30, groups: buildWave(rng, params, budget, plan, beat) });
+    segments.push({ type: 'wave', at: start + 30, groups: buildWave(waveRng, params, budget, plan, beat) });
+
+    // An ambush: a second wave right behind the first, with no gate to recover in between.
+    const ambush =
+      params.features.has('ambush') &&
+      beat > 1 &&
+      (params.spotlight === 'ambush' ? beat % 2 === 0 : rng.chance(0.3));
+    if (ambush) {
+      const groups = buildWave(waveRng, params, budget * AMBUSH_SHARE, plan, beat);
+      segments.push({ type: 'wave', at: start + AMBUSH_DELAY, groups });
+    }
 
     if (params.features.has('barrel') && rng.chance(params.spotlight === 'barrel' ? 0.9 : 0.35)) {
       segments.push({ type: 'obstacle', at: start + 26, kind: 'barrel', x: rng.range(-3.5, 3.5) });
@@ -273,7 +342,14 @@ export function generateLevel(params: GeneratorParams): LevelDef {
     const hp = plan.units * plan.power * UNIT_DPS * seconds * params.difficulty * 1.6;
     const kind = params.finale;
     const hpScale = params.bossHpScale ?? Number((hp / ENEMIES[kind].hp).toFixed(3));
-    segments.push({ type: 'boss', at: end + 10, kind, hpScale });
+    segments.push({
+      type: 'boss',
+      at: end + 10,
+      kind,
+      hpScale,
+      expectedUnits: Math.round(plan.units),
+      fierce: kind === 'boss' && params.features.has('breath'),
+    });
   }
 
   return {

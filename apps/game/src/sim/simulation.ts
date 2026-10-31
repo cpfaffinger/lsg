@@ -31,11 +31,16 @@ export interface StepInput {
 
 const MAX_PROJECTILES = 1400;
 /** Largest wave a horde can grow to; also the limit of what stays readable on screen. */
-const MAX_HORDE = 220;
+const MAX_HORDE = 300;
 /** A crowd spreads this far beyond the squad on its way in. */
 const CROWD_MARGIN = 3;
 /** Distance ahead of the squad at which a crowd closes in. */
 const CLOSE_IN_DISTANCE = 12;
+/** Half width of the opening in a wall of dragon fire, and the distance between its flames. */
+const BREATH_GAP = 2.6;
+const BREATH_SPACING = 0.9;
+/** Seconds between two walls of fire. */
+const BREATH_INTERVAL = 6;
 const ENEMY_PROJECTILE_SPEED = 17;
 const SQUAD_FRONT_Z = SQUAD_Z - 0.45;
 /** Enemies closer than this are auto-targeted; farther away the squad shoots straight. */
@@ -100,6 +105,7 @@ export class Simulation {
   private readonly grid = new SpatialGrid(2);
   private readonly slot: SlotOffset = { x: 0, z: 0 };
   private bossSummonTimer = 0;
+  private bossBreathTimer = 0;
 
   constructor(level: LevelDef, modifiers: RunModifiers = DEFAULT_MODIFIERS) {
     this.level = level;
@@ -184,6 +190,14 @@ export class Simulation {
     const follow = 1 - Math.exp(-BALANCE.squad.followSharpness * this.modifiers.moveSpeedMultiplier * dt);
     this.squadX += (this.targetX - this.squadX) * follow;
     this.squadX = clamp(this.squadX, -limit, limit);
+  }
+
+  /** Damage below one soldier adds up until somebody falls. */
+  private wound(amount: number, x: number, z: number, cause: LossCause): void {
+    this.crushBank += amount;
+    const lost = Math.floor(this.crushBank);
+    this.crushBank -= lost;
+    if (lost > 0) this.loseUnits(lost, x, z, cause);
   }
 
   private loseUnits(count: number, x: number, z: number, cause: LossCause): void {
@@ -327,7 +341,7 @@ export class Simulation {
           this.spawnObstacle(segment.kind, segment.x, z, segment.width, segment.hp);
           break;
         case 'boss':
-          this.spawnBoss(segment.kind, z, segment.hpScale ?? 1);
+          this.spawnBoss(segment, z);
           break;
       }
     }
@@ -373,6 +387,8 @@ export class Simulation {
       speed: def.speed,
       homing: def.homing,
       crush: def.crush,
+      threat: 1,
+      fierce: false,
       coins: def.coins,
       holdZ: def.holdDistance === null ? null : SQUAD_Z - def.holdDistance,
       fireCooldown: def.fireInterval * (0.5 + this.rng.next()),
@@ -385,13 +401,20 @@ export class Simulation {
     return enemy;
   }
 
+  /** How much stronger enemies get because the squad outgrew the size they were planned for. */
+  private threatFor(expectedUnits: number | undefined): number {
+    if (!expectedUnits) return 1;
+    return Math.max(1, this.units / expectedUnits) ** BALANCE.threatExponent;
+  }
+
   private spawnWaveGroup(group: WaveGroup, z: number): void {
     const def = ENEMIES[group.kind];
     const width = Math.min(LANE_WIDTH - 1, group.width ?? LANE_WIDTH - 1);
     const centerX = group.x ?? 0;
     const spacing = Math.max(def.radius * 2.3, 0.9);
     const pattern = group.pattern ?? 'grid';
-    const hpScale = group.hpScale ?? 1;
+    const threat = this.threatFor(group.expectedUnits);
+    const hpScale = (group.hpScale ?? 1) * threat;
     const perRow = Math.max(1, Math.floor(width / spacing));
     const count = group.perUnit
       ? Math.max(group.count, Math.min(MAX_HORDE, Math.round(this.units * group.perUnit)))
@@ -427,7 +450,7 @@ export class Simulation {
           break;
       }
       x = clamp(x, -LANE_HALF_WIDTH + def.radius, LANE_HALF_WIDTH - def.radius);
-      this.spawnEnemy(group.kind, x, z - dz, hpScale);
+      this.spawnEnemy(group.kind, x, z - dz, hpScale).threat = threat;
     }
   }
 
@@ -449,11 +472,16 @@ export class Simulation {
     });
   }
 
-  private spawnBoss(kind: 'boss' | 'miniboss', z: number, hpScale: number): void {
-    const boss = this.spawnEnemy(kind, 0, z, hpScale);
+  private spawnBoss(segment: Extract<Segment, { type: 'boss' }>, z: number): void {
+    const { kind } = segment;
+    const threat = this.threatFor(segment.expectedUnits);
+    const boss = this.spawnEnemy(kind, 0, z, (segment.hpScale ?? 1) * threat);
+    boss.threat = threat;
+    boss.fierce = segment.fierce === true;
     if (kind === 'boss') {
       this.bossId = boss.id;
       this.bossSummonTimer = 5;
+      this.bossBreathTimer = BREATH_INTERVAL / 2;
     }
     this.emit({ type: 'bossSpawned', id: boss.id, kind });
   }
@@ -591,7 +619,7 @@ export class Simulation {
           enemy.fireCooldown -= dt;
           if (enemy.fireCooldown <= 0) {
             enemy.fireCooldown = ENEMIES[enemy.kind].fireInterval * this.rng.range(0.8, 1.2);
-            this.fireEnemyProjectile(enemy.x, enemy.z + enemy.radius, 1);
+            this.fireEnemyProjectile(enemy.x, enemy.z + enemy.radius, enemy.threat);
           }
         }
       }
@@ -603,10 +631,7 @@ export class Simulation {
         this.squadContains(enemy.x, enemy.radius)
       ) {
         // Weak enemies only wound: a soldier falls once their contact damage adds up.
-        this.crushBank += enemy.crush;
-        const lost = Math.floor(this.crushBank);
-        this.crushBank -= lost;
-        if (lost > 0) this.loseUnits(lost, enemy.x, enemy.z, enemy.kind);
+        this.wound(enemy.crush * enemy.threat, enemy.x, enemy.z, enemy.kind);
         this.killEnemy(enemy, true);
         continue;
       }
@@ -643,7 +668,7 @@ export class Simulation {
       const volley = boss.kind === 'boss' ? 1 + phase * 2 : 1 + phase;
       for (let i = 0; i < volley; i++) {
         const offset = volley === 1 ? 0 : (i - (volley - 1) / 2) * 1.2;
-        this.fireEnemyProjectile(boss.x + offset, boss.z + boss.radius, boss.kind === 'boss' ? 2 : 1);
+        this.fireEnemyProjectile(boss.x + offset, boss.z + boss.radius, this.bossHit());
       }
     }
     if (boss.kind === 'boss' && phase >= 1) {
@@ -652,20 +677,43 @@ export class Simulation {
         this.bossSummonTimer = phase === 2 ? 4 : 6;
         const count = 6 + phase * 4;
         for (let i = 0; i < count; i++) {
-          this.spawnEnemy(
-            'runner',
+          const minion = this.spawnEnemy(
+            boss.fierce && i % 4 === 0 ? 'bomber' : 'runner',
             clamp(boss.x + this.rng.range(-4, 4), -4.5, 4.5),
             boss.z + boss.radius + this.rng.range(0, 3),
-            1 + this.level.number * 0.08,
+            (1 + this.level.number * 0.08) * boss.threat,
           );
+          minion.threat = boss.threat;
         }
+      }
+    }
+    if (boss.fierce) {
+      this.bossBreathTimer -= dt;
+      if (this.bossBreathTimer <= 0) {
+        this.bossBreathTimer = BREATH_INTERVAL * (phase === 2 ? 0.7 : 1);
+        this.fireBreath(boss);
       }
     }
   }
 
-  private fireEnemyProjectile(x: number, z: number, damage: number): void {
+  /** Boss shots cost a share of the squad: a long fight wears it down instead of wiping it out. */
+  private bossHit(): number {
+    return Math.max(1, this.units * BALANCE.bossShotShare);
+  }
+
+  /** A straight line of fire across the lane with one gap the squad can steer into. */
+  private fireBreath(boss: Enemy): void {
+    const gap = this.rng.range(-LANE_HALF_WIDTH + BREATH_GAP, LANE_HALF_WIDTH - BREATH_GAP);
+    for (let x = -LANE_HALF_WIDTH + 0.4; x < LANE_HALF_WIDTH; x += BREATH_SPACING) {
+      if (Math.abs(x - gap) >= BREATH_GAP) this.fireEnemyProjectile(x, boss.z + boss.radius, this.bossHit(), x);
+    }
+    this.emit({ type: 'bossBreath', x: boss.x, z: boss.z + boss.radius });
+  }
+
+  /** Aims at the squad, or flies straight down the lane when `straightAt` is given. */
+  private fireEnemyProjectile(x: number, z: number, damage: number, straightAt?: number): void {
     if (this.projectiles.length >= MAX_PROJECTILES) return;
-    const dx = this.squadX - x;
+    const dx = (straightAt ?? this.squadX) - x;
     const dz = Math.max(1, SQUAD_Z - z);
     const length = Math.hypot(dx, dz);
     this.projectiles.push({
@@ -736,16 +784,30 @@ export class Simulation {
       for (let i = 0; i < 3; i++) {
         const child = this.spawnEnemy('runner', clamp(enemy.x + (i - 1) * 0.9, -4.6, 4.6), enemy.z - 0.3);
         child.hp = child.maxHp = Math.round(enemy.maxHp * 0.22);
+        child.threat = enemy.threat;
       }
     }
+    if (enemy.kind === 'bomber') this.bomberBlast(enemy, byContact);
     if (enemy.kind === 'boss' && enemy.id === this.bossId) {
       this.bossId = null;
       this.scrolling = true;
       // The boss takes its summoned minions with it.
       for (const other of this.enemies) {
-        if (other.alive && other.kind === 'runner') this.killEnemy(other, false);
+        if (other.alive && (other.kind === 'runner' || other.kind === 'bomber')) {
+          this.killEnemy(other, false);
+        }
       }
     }
+  }
+
+  /** At the squad a bomber costs a share of it; shot early it only hurts the enemies around it. */
+  private bomberBlast(enemy: Enemy, atSquad: boolean): void {
+    const { radius, damage, squadShare, minLoss } = BALANCE.bomber;
+    this.emit({ type: 'explosion', x: enemy.x, z: enemy.z, radius });
+    if (atSquad) {
+      this.loseUnits(Math.max(minLoss, Math.ceil(this.units * squadShare)), enemy.x, enemy.z, 'bomber');
+    }
+    this.areaDamage(enemy.x, enemy.z, radius, damage * enemy.threat);
   }
 
   private areaDamage(x: number, z: number, radius: number, damage: number): void {
@@ -789,7 +851,7 @@ export class Simulation {
       if (p.owner === 'enemy') {
         if (p.z >= SQUAD_FRONT_Z && p.z <= back && this.squadContains(p.x, 0.15)) {
           p.alive = false;
-          this.loseUnits(p.damage, p.x, p.z, 'projectile');
+          this.wound(p.damage, p.x, p.z, 'projectile');
         } else if (p.z > DESPAWN_Z) {
           p.alive = false;
         }

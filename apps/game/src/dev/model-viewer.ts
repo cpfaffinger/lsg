@@ -71,6 +71,7 @@ export async function startModelViewer(canvas: HTMLCanvasElement): Promise<void>
     const size = spacing[i] ?? 2;
     x += size / 2;
     const model = ENEMY_MODELS[kind];
+    if (!model.id) return;
     const params = new InstancedBufferAttribute(new Float32Array([0, clip, 0, 0]), 4);
     const materials = createSkinnedMaterials(model.id);
     const mesh = new InstancedMesh(instanceGeometry(model.id, detail, params), materials.material, 1);

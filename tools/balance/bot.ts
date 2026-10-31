@@ -1,3 +1,4 @@
+import { expectedLoadout } from '../../apps/game/src/data/levels/campaign.ts';
 import { FACTOR_STEPS } from '../../apps/game/src/sim/balance.ts';
 import { resolveGatePass } from '../../apps/game/src/sim/gates.ts';
 import type { LevelDef } from '../../apps/game/src/sim/level.ts';
@@ -5,6 +6,17 @@ import { Simulation } from '../../apps/game/src/sim/simulation.ts';
 import { DEFAULT_MODIFIERS, type Gate, type RunModifiers } from '../../apps/game/src/sim/types.ts';
 
 const DT = 1 / 60;
+
+/** What a player who spends their coins brings to a campaign level. */
+export function expectedModifiers(level: number): RunModifiers {
+  const loadout = expectedLoadout(level);
+  return {
+    ...DEFAULT_MODIFIERS,
+    startUnits: loadout.startUnits,
+    damageMultiplier: loadout.damage,
+    fireRateMultiplier: loadout.fireRate,
+  };
+}
 
 /** Value of walking through a gate pair at squad position `x`, in "effective units". */
 function passScore(sim: Simulation, pair: readonly Gate[], x: number): number {
@@ -75,6 +87,23 @@ export function playLevel(
         const avg = near.reduce((s, e) => s + e.x, 0) / near.length;
         targetX = avg > 0 ? -2 : 2;
       }
+    }
+    // Dragon fire flies straight down the lane in a wall; any player heads for the opening.
+    const flames = sim.projectiles
+      .filter((p) => p.alive && p.owner === 'enemy' && p.vx === 0 && p.z > -16 && p.z < 1)
+      .map((p) => p.x)
+      .sort((a, b) => a - b);
+    if (flames.length > 2 && skill !== 'poor') {
+      let best = 0;
+      let opening = 0;
+      [-5, ...flames, 5].forEach((x, i, all) => {
+        const width = (all[i + 1] ?? x) - x;
+        if (width > best) {
+          best = width;
+          opening = x + width / 2;
+        }
+      });
+      targetX = opening;
     }
     // Any player sidesteps walls: move to the free part of the lane when a barrier is close.
     const barrier = sim.obstacles.find((o) => o.alive && o.kind === 'barrier' && o.z > -14 && o.z < 1);

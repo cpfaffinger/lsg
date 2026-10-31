@@ -21,6 +21,11 @@ export const FEATURE_UNLOCKS: { level: number; feature: Feature }[] = [
   { level: 10, feature: 'boss' },
   { level: 11, feature: 'rocket' },
   { level: 12, feature: 'shield' },
+  { level: 14, feature: 'bomber' },
+  { level: 16, feature: 'formations' },
+  { level: 18, feature: 'ambush' },
+  { level: 19, feature: 'trap' },
+  { level: 20, feature: 'breath' },
 ];
 
 export function worldOf(levelNumber: number): WorldId {
@@ -29,12 +34,24 @@ export function worldOf(levelNumber: number): WorldId {
   return 'station';
 }
 
-/** Expected upgrade progress at a given level, used to size the challenge. */
-export function expectedLoadout(levelNumber: number): { startUnits: number; power: number } {
+/**
+ * Upgrades a player who spends their coins has at a given level (fitted to tools/balance/economy.ts),
+ * used to size the challenge.
+ */
+export function expectedLoadout(levelNumber: number): {
+  startUnits: number;
+  damage: number;
+  fireRate: number;
+  power: number;
+} {
   const progress = levelNumber - 1;
+  const damage = 1 + 1.45 * (1 - Math.exp(-progress / 13));
+  const fireRate = 1 + (1 - Math.exp(-progress / 15));
   return {
-    startUnits: 3 + Math.floor(progress / 3),
-    power: 1 + progress * 0.08,
+    startUnits: Math.min(15, 3 + Math.floor(progress * 0.6)),
+    damage,
+    fireRate,
+    power: damage * fireRate,
   };
 }
 

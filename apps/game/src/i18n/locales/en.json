@@ -185,6 +185,11 @@
     "shield": "Shield bearers block straight shots. Hit them from the side or use spread and rockets.",
     "laser": "Laser: pierces through several enemies.",
     "rocket": "Rockets: slow but explosive.",
+    "bomber": "Bombers! They take part of your squad with them. Shoot them early and they hit their own side instead.",
+    "formations": "Formations: shield walls block the whole lane, hordes attack from both sides.",
+    "ambush": "Ambush: some waves come right after each other, with no gate in between.",
+    "trap": "Trap gates: both sides cost soldiers. Shoot the lesser evil to defuse it.",
+    "breath": "The dragon now breathes walls of fire. Steer your squad into the gap!",
     "continue": "Let's go!"
   },
   "debug": {

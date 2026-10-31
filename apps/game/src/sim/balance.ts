@@ -20,6 +20,18 @@ export const BALANCE = {
     followSharpness: 18,
   },
   scrollSpeed: 9,
+  /** A squad above the size a wave was planned for meets enemies this much stronger (power of the ratio). */
+  threatExponent: 0.75,
+  /** Share of the squad one boss shot or flame takes. */
+  bossShotShare: 0.006,
+  bomber: {
+    /** Share of the squad a bomber takes with it on contact, and the minimum in soldiers. */
+    squadShare: 0.05,
+    minLoss: 2,
+    radius: 3,
+    /** Damage to other enemies around an exploding bomber. */
+    damage: 120,
+  },
   /** Seconds between two kills that still continue a combo. */
   comboWindow: 1.2,
   gates: {
@@ -170,6 +182,17 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     homing: 0.3,
     crush: 3,
     coins: 4,
+    holdDistance: null,
+    fireInterval: 0,
+  },
+  bomber: {
+    kind: 'bomber',
+    hp: 30,
+    radius: 0.5,
+    speed: 7,
+    homing: 1,
+    crush: 0,
+    coins: 1,
     holdDistance: null,
     fireInterval: 0,
   },

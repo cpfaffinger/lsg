@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CAMPAIGN_LENGTH, campaignLevel, expectedLoadout } from '../../apps/game/src/data/levels/campaign.ts';
+import { CAMPAIGN_LENGTH, campaignLevel } from '../../apps/game/src/data/levels/campaign.ts';
 import { endlessLevel } from '../../apps/game/src/data/levels/endless.ts';
-import { DEFAULT_MODIFIERS } from '../../apps/game/src/sim/types.ts';
-import { playLevel } from './bot.ts';
+import { expectedModifiers, playLevel } from './bot.ts';
 
 describe('campaign', () => {
   it('generates 30 valid, deterministic levels with rising length', () => {
@@ -24,12 +23,7 @@ describe('campaign', () => {
   });
 
   it.each([1, 10, 20, 30])('level %i can be beaten by a competent player', (n) => {
-    const loadout = expectedLoadout(n);
-    const result = playLevel(
-      campaignLevel(n),
-      { ...DEFAULT_MODIFIERS, startUnits: loadout.startUnits, damageMultiplier: loadout.power },
-      'good',
-    );
+    const result = playLevel(campaignLevel(n), expectedModifiers(n), 'good');
     expect(result.status).toBe('won');
   });
 

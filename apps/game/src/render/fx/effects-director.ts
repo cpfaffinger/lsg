@@ -18,6 +18,7 @@ const DEBRIS_COUNT: Record<EnemyKind, number> = {
   shooter: 7,
   shield: 8,
   splitter: 9,
+  bomber: 6,
   tank: 16,
   miniboss: 30,
   boss: 60,
@@ -444,6 +445,11 @@ export class EffectsDirector {
           break;
         case 'bossPhase':
           this.shake(0.6);
+          break;
+        case 'bossBreath':
+          this.flash(event.x, 2.5, event.z, 0xff6a1a, 9, 0.3, 5);
+          this.sparks(event.x, 2, event.z, 30, 0xff8a2a, 11, 4);
+          this.shake(0.35);
           break;
         case 'levelComplete':
           for (const color of [0x36e27a, 0x3fa9ff, 0xffd84a, 0xff5ab0]) {

@@ -2,7 +2,15 @@ import type { WeaponId } from '@lsg/shared';
 
 export type { WeaponId };
 
-export type EnemyKind = 'runner' | 'tank' | 'shooter' | 'splitter' | 'shield' | 'miniboss' | 'boss';
+export type EnemyKind =
+  | 'runner'
+  | 'tank'
+  | 'shooter'
+  | 'splitter'
+  | 'shield'
+  | 'bomber'
+  | 'miniboss'
+  | 'boss';
 
 /**
  * Gate operations.
@@ -47,6 +55,10 @@ export interface Enemy {
   homing: number;
   /** Squad units killed on contact. */
   crush: number;
+  /** Multiplies what this enemy costs the squad; grows when the squad outgrew the plan. */
+  threat: number;
+  /** A late boss with the full set of attacks. */
+  fierce: boolean;
   coins: number;
   /** z position where ranged enemies stop to shoot; null = keep walking. */
   holdZ: number | null;
@@ -135,6 +147,7 @@ export type SimEvent =
   | { type: 'obstacleHit'; id: number; x: number; z: number }
   | { type: 'bossSpawned'; id: number; kind: 'boss' | 'miniboss' }
   | { type: 'bossPhase'; id: number; phase: number }
+  | { type: 'bossBreath'; x: number; z: number }
   | { type: 'levelComplete' }
   | { type: 'levelFailed' };
 

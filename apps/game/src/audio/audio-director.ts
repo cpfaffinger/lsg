@@ -75,6 +75,9 @@ export class AudioDirector {
         case 'bossPhase':
           this.audio.play('bossRoar', { volume: 0.6, rate: 1.15, jitter: 0 });
           break;
+        case 'bossBreath':
+          this.audio.play('explosion', { volume: 0.5, rate: 0.7, jitter: 0.1 });
+          break;
         case 'levelComplete':
           this.audio.play('win', { volume: 0.8, jitter: 0 });
           this.audio.setMood('result');

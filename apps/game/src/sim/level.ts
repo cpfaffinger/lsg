@@ -13,6 +13,8 @@ export interface WaveGroup {
   hpScale?: number;
   /** Hordes grow with the squad: at least this many enemies per soldier when the wave spawns. */
   perUnit?: number;
+  /** Squad size this group was planned for; a bigger squad meets a stronger group. */
+  expectedUnits?: number;
   /** Centre of the group across the lane; default 0. */
   x?: number;
   /** Width of the group across the lane; default: full lane. */
@@ -23,7 +25,16 @@ export type Segment =
   | { type: 'gates'; at: number; gates: GateSpec[] }
   | { type: 'wave'; at: number; groups: WaveGroup[] }
   | { type: 'obstacle'; at: number; kind: ObstacleKind; x: number; width?: number; hp?: number }
-  | { type: 'boss'; at: number; kind: 'boss' | 'miniboss'; hpScale?: number; variant?: number };
+  | {
+      type: 'boss';
+      at: number;
+      kind: 'boss' | 'miniboss';
+      hpScale?: number;
+      variant?: number;
+      expectedUnits?: number;
+      /** Late dragons breathe walls of fire and call bombers. */
+      fierce?: boolean;
+    };
 
 export interface LevelDef {
   id: string;

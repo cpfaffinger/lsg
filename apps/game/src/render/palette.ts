@@ -20,6 +20,7 @@ export const ENEMY_COLORS: Record<EnemyKind, number> = {
   tank: 0x8b2b2b,
   shooter: 0xc84ad8,
   splitter: 0xff8a2a,
+  bomber: 0xffb020,
   shield: 0x6b6fd6,
   miniboss: 0x5a1f7a,
   boss: 0x3a0f2a,

@@ -47,7 +47,8 @@ Your squad runs forward on its own and fires automatically. You only steer left 
 - **30-level campaign** through three worlds, Dust Valley, Neon City and Orbit Station, with mini-bosses and bosses, plus an **endless mode**.
 - **Gates that count**: each gate changes exactly the soldiers who pass through it.
 - **Four weapons**: rifle, spread gun, piercing laser and rockets, from gates or as a start weapon from the shop.
-- **Real hordes** from the first level: waves grow with your squad, alongside tanks, shooters, splitters and shield bearers.
+- **Real hordes** from the first level: waves grow with your squad, alongside tanks, shooters, splitters, shield bearers and walking bombs.
+- **A late game with teeth:** shield walls, pincer attacks, ambushes, trap gates and dragons that breathe walls of fire.
 - **Fair progression**: upgrades, weapons and skins cost in-game coins only. There is nothing to buy with real money.
 - **Built for phones, equally good on desktop**: one-finger steering or keyboard, automatic quality adjustment, portrait and landscape.
 - **Installable and offline-capable** as a Progressive Web App, playable as a guest without any account.
